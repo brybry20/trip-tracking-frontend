@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import API_URL from '../../config'; // ✅ IMPORT CONFIG
+import API_URL from '../../config';
 
 function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
   const [showForm, setShowForm] = useState(false);
+  const [editingTrip, setEditingTrip] = useState(null); // For edit mode
   const [search, setSearch] = useState('');
   const [filterDealer, setFilterDealer] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
@@ -17,25 +18,76 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
     setTripForm({ ...tripForm, [e.target.name]: e.target.value });
   };
 
+  // Reset form to default values
+  const resetForm = () => {
+    setTripForm({
+      date: new Date().toISOString().split('T')[0],
+      helper: '', time_in: '', time_out: '',
+      odometer: '', invoice_no: '', dealer: ''
+    });
+    setEditingTrip(null);
+    setShowForm(false);
+  };
+
+  // Handle Edit button click
+  const handleEdit = (trip) => {
+    setEditingTrip(trip);
+    setTripForm({
+      date: trip.date,
+      helper: trip.helper || '',
+      time_in: trip.time_in || '',
+      time_out: trip.time_out || '',
+      odometer: trip.odometer || '',
+      invoice_no: trip.invoice_no || '',
+      dealer: trip.dealer || ''
+    });
+    setShowForm(true);
+  };
+
+  // Handle Delete button click
+  const handleDelete = async (tripId) => {
+    if (!window.confirm('Are you sure you want to delete this trip?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/trips/${tripId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        alert('Trip deleted successfully!');
+        fetchTrips(); // Refresh the trips list
+      } else {
+        alert('Error deleting trip: ' + data.message);
+      }
+    } catch (err) {
+      alert('Error connecting to server');
+    }
+  };
+
   const handleSubmitTrip = async (e) => {
     e.preventDefault();
     try {
-      // ✅ GAMITIN ANG API_URL
-      const res = await fetch(`${API_URL}/trips`, {
-        method: 'POST',
+      const url = editingTrip 
+        ? `${API_URL}/trips/${editingTrip.id}` 
+        : `${API_URL}/trips`;
+      
+      const method = editingTrip ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tripForm),
         credentials: 'include'
       });
+      
       const data = await res.json();
       if (data.success) {
-        alert('Trip saved successfully!');
-        setShowForm(false);
-        setTripForm({
-          date: new Date().toISOString().split('T')[0],
-          helper: '', time_in: '', time_out: '',
-          odometer: '', invoice_no: '', dealer: ''
-        });
+        alert(editingTrip ? 'Trip updated successfully!' : 'Trip saved successfully!');
+        resetForm();
         fetchTrips();
       } else {
         alert('Error saving trip: ' + data.message);
@@ -317,6 +369,15 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         }
         .dd-submit-btn:hover { background: #1f2937; box-shadow: 0 4px 14px rgba(15,17,23,0.2); }
 
+        /* Cancel Edit button */
+        .dd-cancel-btn {
+          width: 100%; margin-top: 10px; padding: 14px;
+          background: #6b7280; color: #ffffff; border: none; border-radius: 10px;
+          font-size: 15px; font-family: 'DM Sans', sans-serif; font-weight: 600;
+          cursor: pointer; transition: background 0.2s;
+        }
+        .dd-cancel-btn:hover { background: #4b5563; }
+
         /* ── Table Card ── */
         .dd-table-card {
           background: #ffffff; border: 1px solid #e5e7eb;
@@ -394,6 +455,31 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
           color: #4b5563; cursor: pointer; transition: background 0.2s;
         }
         .dd-refresh-btn:hover { background: #e5e7eb; }
+
+        /* Action Buttons */
+        .dd-action-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          margin: 0 4px;
+          padding: 6px;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+        .dd-action-btn.edit {
+          color: #3b82f6;
+        }
+        .dd-action-btn.edit:hover {
+          background: #eff6ff;
+          transform: scale(1.1);
+        }
+        .dd-action-btn.delete {
+          color: #ef4444;
+        }
+        .dd-action-btn.delete:hover {
+          background: #fee2e2;
+          transform: scale(1.1);
+        }
 
         /* Filter bar */
         .dd-filter-bar {
@@ -495,7 +581,13 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         </div>
 
         {/* Add Trip Button */}
-        <button className={`dd-add-btn${showForm ? ' cancel' : ''}`} onClick={() => setShowForm(!showForm)}>
+        <button className={`dd-add-btn${showForm ? ' cancel' : ''}`} onClick={() => {
+          if (showForm) {
+            resetForm();
+          } else {
+            setShowForm(true);
+          }
+        }}>
           {showForm ? <><CloseIcon /> Cancel</> : <><PlusIcon /> Log New Trip</>}
         </button>
 
@@ -503,11 +595,9 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         {showForm && (
           <div className="dd-form-card">
             <div className="dd-form-title">
-              <span className="dd-form-title-dot" /> New Trip Log
+              <span className="dd-form-title-dot" /> {editingTrip ? 'Edit Trip' : 'New Trip Log'}
             </div>
             <form onSubmit={handleSubmitTrip}>
-
-              {/* Row 1: Date + Driver */}
               <div className="dd-form-grid">
                 <div className="dd-field">
                   <label className="dd-label">Date</label>
@@ -530,7 +620,6 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                 </div>
               </div>
 
-              {/* Row 2: Helper + Dealer */}
               <div className="dd-form-grid">
                 <div className="dd-field">
                   <label className="dd-label">Helper</label>
@@ -542,7 +631,6 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                 </div>
               </div>
 
-              {/* Row 3: Time In + Time Out */}
               <div className="dd-form-grid">
                 <div className="dd-field">
                   <label className="dd-label">Time In</label>
@@ -576,7 +664,6 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                 </div>
               </div>
 
-              {/* Row 4: Odometer + Invoice */}
               <div className="dd-form-grid">
                 <div className="dd-field">
                   <label className="dd-label">Odometer (km)</label>
@@ -588,9 +675,16 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                 </div>
               </div>
 
-              <button type="submit" className="dd-submit-btn">
-                <SaveIcon /> Save Trip Log
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" className="dd-submit-btn" style={{ flex: 1 }}>
+                  <SaveIcon /> {editingTrip ? 'Update Trip' : 'Save Trip'}
+                </button>
+                {editingTrip && (
+                  <button type="button" className="dd-cancel-btn" onClick={resetForm} style={{ flex: 1 }}>
+                    Cancel Edit
+                  </button>
+                )}
+              </div>
             </form>
           </div>
         )}
@@ -652,6 +746,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                     <th>Time Out</th>
                     <th>Odometer</th>
                     <th>Invoice</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -664,6 +759,22 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                       <td>{trip.time_out}</td>
                       <td>{trip.odometer} km</td>
                       <td>{trip.invoice_no}</td>
+                      <td>
+                        <button 
+                          className="dd-action-btn edit" 
+                          onClick={() => handleEdit(trip)}
+                          title="Edit trip"
+                        >
+                          ✏️
+                        </button>
+                        <button 
+                          className="dd-action-btn delete" 
+                          onClick={() => handleDelete(trip.id)}
+                          title="Delete trip"
+                        >
+                          🗑️
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
