@@ -1,11 +1,8 @@
 // frontend/src/config.js
 
-// Ito ang magiging base URL ng iyong backend
-// Sa development (localhost), gamitin ang port 5000
-// Sa production (deployed), palitan ito ng iyong Render URL
+// Sa Vite (ginagamit mo), ang environment variables ay nasa import.meta.env
+// at dapat naka-prefix ng VITE_
 
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://trip-tracking-backend.onrender.com'  // ✅ PALITAN ITO kapag na-deploy na ang backend
-  : 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default API_URL;
