@@ -12,13 +12,43 @@ function Dashboard({ user, setUser }) {
   const [trips, setTrips] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  useEffect(() => {
-    if (user.role === 'driver') fetchDriverInfo();
-    else if (user.role === 'admin') fetchDrivers();
-    fetchTrips();
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    return () => clearInterval(timer);
-  }, [user]);
+useEffect(() => {
+  // Check if user is logged in by verifying the session
+  const checkAuth = async () => {
+    try {
+      const res = await fetch(`${API_URL}/auth/check`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      
+      if (!data.authenticated) {
+        // Redirect to login if not authenticated
+        navigate('/login');
+      } else {
+        // If authenticated but user state is empty, update it
+        if (!user || !user.username) {
+          setUser(data);
+        }
+        
+        // Proceed with fetching data based on role
+        if (data.role === 'driver') {
+          fetchDriverInfo();
+        } else if (data.role === 'admin') {
+          fetchDrivers();
+        }
+        fetchTrips();
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      navigate('/login');
+    }
+  };
+
+  checkAuth();
+  
+  const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+  return () => clearInterval(timer);
+}, []); // ✅ Empty dependency array para tumakbo lang once
 
   const fetchDriverInfo = async () => {
     try {
