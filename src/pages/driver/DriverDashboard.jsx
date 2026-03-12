@@ -52,6 +52,76 @@ function useToast() {
 }
 
 /* ─────────────────────────────────────────────
+   LOADING OVERLAY
+───────────────────────────────────────────── */
+function LoadingOverlay({ isVisible, message = 'Processing…', submessage = '' }) {
+  if (!isVisible) return null;
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 10000,
+      background: 'rgba(10,12,16,0.75)',
+      backdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      animation: 'fadeIn 0.18s ease',
+      fontFamily: "'DM Sans', sans-serif",
+    }}>
+      <div style={{
+        background: '#0f1117',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderTop: '3px solid #f59e0b',
+        borderRadius: 18,
+        padding: '42px 56px',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: 20,
+        boxShadow: '0 32px 80px rgba(0,0,0,0.65)',
+        animation: 'modalIn 0.28s cubic-bezier(0.34,1.4,0.64,1)',
+        minWidth: 260, textAlign: 'center',
+      }}>
+        <div style={{ position: 'relative', width: 58, height: 58 }}>
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            border: '3px solid rgba(255,255,255,0.05)',
+          }} />
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            border: '3px solid transparent',
+            borderTopColor: '#f59e0b',
+            borderRightColor: 'rgba(245,158,11,0.25)',
+            animation: 'spin 0.75s linear infinite',
+          }} />
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%,-50%)',
+            width: 10, height: 10, borderRadius: '50%',
+            background: '#f59e0b',
+            animation: 'loadPulse 1.2s ease-in-out infinite',
+            boxShadow: '0 0 12px rgba(245,158,11,0.7)',
+          }} />
+        </div>
+        <div>
+          <div style={{
+            fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700,
+            color: '#f3f4f6', letterSpacing: -0.2,
+            marginBottom: submessage ? 6 : 0,
+          }}>{message}</div>
+          {submessage && (
+            <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>{submessage}</div>
+          )}
+        </div>
+        <div style={{ width: '100%', height: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            background: 'linear-gradient(90deg, transparent, #f59e0b, transparent)',
+            backgroundSize: '200% 100%',
+            animation: 'loadBar 1.4s ease-in-out infinite',
+          }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    CONFIRM MODAL
 ───────────────────────────────────────────── */
 function ConfirmModal({ isOpen, title, message, onConfirm, onCancel, confirmLabel = 'Confirm', confirmColor = '#ef4444' }) {
@@ -195,6 +265,11 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
   const [confirm, setConfirm] = useState({ open: false, title: '', message: '', onConfirm: null });
   const modalRef = useRef(null);
 
+  // Global loading overlay state
+  const [loadingOverlay, setLoadingOverlay] = useState({ visible: false, message: '', submessage: '' });
+  const showLoading = (message, submessage = '') => setLoadingOverlay({ visible: true, message, submessage });
+  const hideLoading = () => setLoadingOverlay({ visible: false, message: '', submessage: '' });
+
   // LOCATION STATE
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationError, setLocationError] = useState('');
@@ -248,6 +323,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
     if (!tripForm.dealer.trim()) { addToast('Please enter a dealer name before starting the trip.', 'error', 'Missing Field'); return; }
     if (!currentLocation) { addToast('GPS location is required to start a trip. Please wait for detection.', 'error', 'Location Required'); return; }
     try {
+      showLoading('Starting Trip…', 'Recording your GPS location and trip details');
       const validInvoices = invoices.filter(inv => inv.invoice_no && inv.amount);
       const validChecks = checks.filter(chk => chk.check_no && chk.amount);
       const tripData = { ...tripForm, invoices: validInvoices, checks: validChecks, location: currentLocation };
@@ -257,6 +333,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
       });
       const data = await res.json();
       if (data.success) {
+        hideLoading();
         addToast(`Trip started successfully at ${formatTimeDisplay(data.time_in)}`, 'success', 'Trip Started');
         await fetchTrips();
         const tripsArray = Array.isArray(trips) ? trips : [];
@@ -268,15 +345,17 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         setInvoices([{ invoice_no: '', amount: '' }]);
         setChecks([{ check_no: '', amount: '' }]);
       } else {
+        hideLoading();
         addToast(data.message, 'error', 'Error');
       }
-    } catch { addToast('Could not connect to server. Please try again.', 'error', 'Connection Error'); }
+    } catch { hideLoading(); addToast('Could not connect to server. Please try again.', 'error', 'Connection Error'); }
   };
 
   const handleEndTrip = async () => {
     if (!editingTrip) { addToast('Please start the trip first.', 'error', 'No Active Trip'); return; }
     if (!tripForm.odometer) { addToast('Please enter the odometer reading before ending the trip.', 'error', 'Missing Field'); return; }
     try {
+      showLoading('Ending Trip…', 'Saving all details and recording your time out');
       // Auto-save all current details (invoices, checks, odometer) first
       const validInvoices = invoices.filter(inv => inv.invoice_no && inv.amount);
       const validChecks = checks.filter(chk => chk.check_no && chk.amount);
@@ -292,13 +371,15 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
       const res = await fetch(`${API_URL}/trips/${editingTrip.id}/time-out`, { method: 'POST', credentials: 'include' });
       const data = await res.json();
       if (data.success) {
+        hideLoading();
         setTripForm(prev => ({ ...prev, time_out: data.time_out }));
         addToast(`Trip ended at ${formatTimeDisplay(data.time_out)}. All details saved.`, 'success', 'Trip Ended');
         fetchTrips();
       } else {
+        hideLoading();
         addToast(data.message, 'error', 'Error');
       }
-    } catch { addToast('Could not connect to server.', 'error', 'Connection Error'); }
+    } catch { hideLoading(); addToast('Could not connect to server.', 'error', 'Connection Error'); }
   };
 
   const resetForm = () => {
@@ -328,12 +409,14 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
       confirmColor: '#ef4444',
       onConfirm: async () => {
         setConfirm(p => ({ ...p, open: false }));
+        showLoading('Deleting Trip…', 'Removing trip record from the database');
         try {
           const res = await fetch(`${API_URL}/trips/${tripId}`, { method: 'DELETE', credentials: 'include' });
           const data = await res.json();
+          hideLoading();
           if (data.success) { addToast('Trip record has been deleted.', 'success', 'Deleted'); fetchTrips(); }
           else addToast(data.message, 'error', 'Delete Failed');
-        } catch { addToast('Could not connect to server.', 'error', 'Connection Error'); }
+        } catch { hideLoading(); addToast('Could not connect to server.', 'error', 'Connection Error'); }
       }
     });
   };
@@ -356,6 +439,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
       confirmColor: '#0f1117',
       onConfirm: async () => {
         setConfirm(p => ({ ...p, open: false }));
+        showLoading('Saving Details…', 'Updating invoices, checks, and odometer');
         try {
           const validInvoices = invoices.filter(inv => inv.invoice_no && inv.amount);
           const validChecks = checks.filter(chk => chk.check_no && chk.amount);
@@ -367,6 +451,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
             credentials: 'include'
           });
           const data = await res.json();
+          hideLoading();
           if (data.success) {
             addToast('Trip details updated successfully.', 'success', 'Trip Updated');
             fetchTrips();
@@ -374,6 +459,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
             addToast(data.message || 'Failed to update trip.', 'error', 'Update Failed');
           }
         } catch {
+          hideLoading();
           addToast('Could not connect to server.', 'error', 'Connection Error');
         }
       }
@@ -460,6 +546,14 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         }
         @keyframes spin {
           from { transform: rotate(0deg); } to { transform: rotate(360deg); }
+        }
+        @keyframes loadPulse {
+          0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+          50%       { transform: translate(-50%,-50%) scale(0.5); opacity: 0.4; }
+        }
+        @keyframes loadBar {
+          0%   { background-position: -200% center; }
+          100% { background-position: 200% center; }
         }
 
         .dd-root { font-family: 'DM Sans', sans-serif; }
@@ -610,6 +704,13 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
 
       {/* Toast Container */}
       <Toast toasts={toasts} removeToast={removeToast} />
+
+      {/* Loading Overlay */}
+      <LoadingOverlay
+        isVisible={loadingOverlay.visible}
+        message={loadingOverlay.message}
+        submessage={loadingOverlay.submessage}
+      />
 
       {/* Confirm Modal */}
       <ConfirmModal
