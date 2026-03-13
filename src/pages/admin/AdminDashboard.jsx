@@ -73,7 +73,7 @@ function LoadingOverlay({ message = 'Loading…' }) {
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
 ───────────────────────────────────────────── */
-function AdminDashboard({ drivers, trips, fetchTrips }) {
+function AdminDashboard({ drivers: propDrivers, trips, fetchTrips }) {
   const { toasts, addToast, removeToast } = useToast();
 
   const [view, setView] = useState('drivers');
@@ -83,8 +83,50 @@ function AdminDashboard({ drivers, trips, fetchTrips }) {
   const [historicalDrivers, setHistoricalDrivers] = useState([]);
   const [loadingHistorical, setLoadingHistorical] = useState(false);
 
+  // ✅ Drivers state - para sa main database
+  const [drivers, setDrivers] = useState([]);
+
+  // Password reset modal state
+  const [resetPasswordModal, setResetPasswordModal] = useState({
+    open: false,
+    driverId: null,
+    driverName: '',
+    driverUsername: ''
+  });
+
+  // New password state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // ✅ Fetch drivers function (hindi kasama si admin)
+  const fetchDrivers = async () => {
+    try {
+      const res = await fetch(`${API_URL}/trips/users`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      console.log('Drivers from server:', data);
+      
+      if (Array.isArray(data)) {
+        setDrivers(data);
+      } else if (data.error) {
+        addToast(data.error, 'error', 'Error');
+      }
+    } catch (err) {
+      console.error('Error fetching drivers:', err);
+      addToast('Failed to load drivers', 'error', 'Connection Error');
+    }
+  };
+
   useEffect(() => {
-    if (activeDatabase === 'historical') fetchHistoricalData();
+    if (activeDatabase === 'historical') {
+      fetchHistoricalData();
+    } else {
+      // ✅ Load drivers when on main database
+      fetchDrivers();
+    }
   }, [activeDatabase]);
 
   const fetchHistoricalData = async () => {
@@ -106,8 +148,9 @@ function AdminDashboard({ drivers, trips, fetchTrips }) {
     }
   };
 
-  const currentTrips = activeDatabase === 'main' ? trips : historicalTrips;
+  // ✅ Current drivers based on database
   const currentDrivers = activeDatabase === 'main' ? drivers : historicalDrivers;
+  const currentTrips = activeDatabase === 'main' ? trips : historicalTrips;
 
   const [driverSearch, setDriverSearch] = useState('');
   const [tripSearch, setTripSearch] = useState('');
@@ -124,10 +167,14 @@ function AdminDashboard({ drivers, trips, fetchTrips }) {
   const dealers = useMemo(() => [...new Set(currentTrips.map(t => t.dealer).filter(Boolean))], [currentTrips]);
   const availableYears = useMemo(() => [...new Set(currentTrips.map(t => t.date?.slice(0, 4)).filter(Boolean))].sort((a, b) => b - a), [currentTrips]);
 
+  // ✅ Filtered drivers (hindi kasama si admin)
   const filteredDrivers = useMemo(() => {
     const q = driverSearch.toLowerCase();
     if (!q) return currentDrivers;
-    return currentDrivers.filter(d => [d.full_name, d.username, d.email, d.phone, d.license_number].some(v => v?.toLowerCase().includes(q)));
+    return currentDrivers.filter(d => 
+      [d.full_name, d.username, d.email, d.phone, d.license_number]
+        .some(v => v?.toLowerCase().includes(q))
+    );
   }, [currentDrivers, driverSearch]);
 
   const filteredTrips = useMemo(() => currentTrips.filter(t => {
@@ -176,6 +223,69 @@ function AdminDashboard({ drivers, trips, fetchTrips }) {
     addToast(`Exported ${filteredTrips.length} trip(s) to CSV.`, 'success', 'Export Complete');
   };
 
+  // ✅ Function to open reset password modal
+  const openResetPasswordModal = (driver) => {
+    setResetPasswordModal({
+      open: true,
+      driverId: driver.id,
+      driverName: driver.full_name,
+      driverUsername: driver.username
+    });
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
+  // Function to reset password
+  const handleResetPassword = async () => {
+    if (!newPassword) {
+      addToast('Please enter a new password', 'error', 'Password Required');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      addToast('Password must be at least 6 characters', 'error', 'Invalid Password');
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      addToast('Passwords do not match', 'error', 'Password Mismatch');
+      return;
+    }
+    
+    try {
+      console.log('Sending to:', `${API_URL}/trips/reset-password`);
+      console.log('Payload:', {
+        user_id: resetPasswordModal.driverId,
+        new_password: newPassword
+      });
+      
+      const res = await fetch(`${API_URL}/trips/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: resetPasswordModal.driverId,
+          new_password: newPassword
+        }),
+        credentials: 'include'
+      });
+      
+      const data = await res.json();
+      console.log('Reset password response:', data);
+      
+      if (data.success) {
+        addToast(`Password for ${resetPasswordModal.driverName} has been reset`, 'success', 'Password Updated');
+        setResetPasswordModal({ open: false, driverId: null, driverName: '', driverUsername: '' });
+        // Refresh drivers list
+        fetchDrivers();
+      } else {
+        addToast(data.message || 'Failed to reset password', 'error', 'Error');
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      addToast('Could not connect to server', 'error', 'Connection Error');
+    }
+  };
+  
   // Analytics
   const analyticsTrips = useMemo(() => {
     let f = analyticsDriver ? currentTrips.filter(t => t.driver_name === analyticsDriver) : currentTrips;
@@ -303,6 +413,7 @@ function AdminDashboard({ drivers, trips, fetchTrips }) {
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.9) translateY(16px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
         .ad-root { font-family: 'DM Sans', sans-serif; }
 
@@ -448,6 +559,135 @@ function AdminDashboard({ drivers, trips, fetchTrips }) {
 
       <Toast toasts={toasts} removeToast={removeToast} />
 
+      {/* Password Reset Modal */}
+      {resetPasswordModal.open && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 10000,
+          background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+          animation: 'fadeIn 0.2s ease'
+        }}>
+          <div style={{
+            background: '#ffffff', borderRadius: 18, padding: '36px 32px',
+            maxWidth: 420, width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.25)',
+            animation: 'modalIn 0.25s cubic-bezier(0.34,1.4,0.64,1)',
+            fontFamily: "'DM Sans', sans-serif"
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 12,
+                background: '#fef3c7', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', fontSize: 22
+              }}>
+                🔑
+              </div>
+              <div>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, color: '#0f1117' }}>
+                  Reset Password
+                </div>
+                <div style={{ fontSize: 14, color: '#6b7280', marginTop: 2 }}>
+                  {resetPasswordModal.driverName} ({resetPasswordModal.driverUsername})
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                  New Password
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    style={{
+                      width: '100%', padding: '12px 16px', paddingRight: 40,
+                      border: '1.5px solid #e5e7eb', borderRadius: 10,
+                      fontSize: 14, outline: 'none', transition: 'border-color 0.18s'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
+                    onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                    placeholder="Enter new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{
+                      position: 'absolute', right: 12, background: 'none',
+                      border: 'none', cursor: 'pointer', fontSize: 16, color: '#6b7280'
+                    }}
+                  >
+                    {showNewPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+                <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+                  Minimum 6 characters
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                  Confirm Password
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    style={{
+                      width: '100%', padding: '12px 16px', paddingRight: 40,
+                      border: '1.5px solid #e5e7eb', borderRadius: 10,
+                      fontSize: 14, outline: 'none', transition: 'border-color 0.18s'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
+                    onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                    placeholder="Confirm new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute', right: 12, background: 'none',
+                      border: 'none', cursor: 'pointer', fontSize: 16, color: '#6b7280'
+                    }}
+                  >
+                    {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setResetPasswordModal({ open: false, driverId: null, driverName: '', driverUsername: '' })}
+                style={{
+                  flex: 1, padding: '12px', border: '1.5px solid #e5e7eb', borderRadius: 10,
+                  background: '#fff', color: '#374151', fontSize: 14.5, fontWeight: 600,
+                  cursor: 'pointer', transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.target.style.background = '#f9fafb'}
+                onMouseLeave={e => e.target.style.background = '#fff'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetPassword}
+                style={{
+                  flex: 1, padding: '12px', border: 'none', borderRadius: 10,
+                  background: '#0f1117', color: '#fff', fontSize: 14.5, fontWeight: 600,
+                  cursor: 'pointer', transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.target.style.background = '#1f2937'}
+                onMouseLeave={e => e.target.style.background = '#0f1117'}
+              >
+                Reset Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="ad-root">
 
         {/* Database Switcher */}
@@ -512,7 +752,7 @@ function AdminDashboard({ drivers, trips, fetchTrips }) {
                 </div>
                 {hasDriverFilters && <button className="ad-clear-btn" onClick={clearDriverFilters}><CloseIcon /> Clear</button>}
                 <button className="ad-export-btn" onClick={exportDrivers}><ExportIcon /> Export CSV</button>
-                <button className="ad-refresh-btn" onClick={activeDatabase === 'main' ? fetchTrips : fetchHistoricalData}><RefreshIcon /> Refresh</button>
+                <button className="ad-refresh-btn" onClick={activeDatabase === 'main' ? () => fetchDrivers() : fetchHistoricalData}><RefreshIcon /> Refresh</button>
               </div>
             </div>
 
@@ -533,7 +773,15 @@ function AdminDashboard({ drivers, trips, fetchTrips }) {
                 : (
                   <div className="ad-table-wrap">
                     <table className="ad-table">
-                      <thead><tr><th>Driver</th><th>Email</th><th>Phone</th><th>License No.</th></tr></thead>
+                      <thead>
+                        <tr>
+                          <th>Driver</th>
+                          <th>Email</th>
+                          <th>Phone</th>
+                          <th>License No.</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
                       <tbody>
                         {filteredDrivers.map(driver => (
                           <tr key={driver.id}>
@@ -549,6 +797,22 @@ function AdminDashboard({ drivers, trips, fetchTrips }) {
                             <td>{driver.email || '—'}</td>
                             <td>{driver.phone || '—'}</td>
                             <td><span className="ad-badge license">{driver.license_number || '—'}</span></td>
+                            <td>
+                              <button
+                                onClick={() => openResetPasswordModal(driver)}
+                                style={{
+                                  background: '#fef3c7', border: 'none', borderRadius: 6,
+                                  padding: '6px 12px', fontSize: 12, fontWeight: 600,
+                                  color: '#92400e', cursor: 'pointer', display: 'inline-flex',
+                                  alignItems: 'center', gap: 4, transition: 'all 0.15s'
+                                }}
+                                onMouseEnter={e => e.target.style.background = '#fde68a'}
+                                onMouseLeave={e => e.target.style.background = '#fef3c7'}
+                                title="Reset password"
+                              >
+                                🔑 Reset Password
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
