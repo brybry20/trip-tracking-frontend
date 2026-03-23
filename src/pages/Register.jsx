@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import logo from '../assets/logo.png';
+import logo from '../assets/deltaplus.png';
 import API_URL from '../config';
 
 function Register() {
@@ -266,7 +266,7 @@ function Register() {
         .rg-form-logo {
           display: flex; justify-content: center; margin-bottom: 20px;
         }
-        .rg-form-logo img { height: 50px; width: auto; object-fit: contain; }
+        .rg-form-logo img { height: 85px; width: auto; object-fit: contain; }
 
         .rg-form-heading { text-align: center; margin-bottom: 22px; }
 

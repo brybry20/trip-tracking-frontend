@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import AdminDashboard from './admin/AdminDashboard';
 import DriverDashboard from './driver/DriverDashboard';
-import logo from '../assets/logo2.png';
+import logo from '../assets/deltaplus.png';
 import API_URL from '../config';
 
 function Dashboard({ user, setUser }) {
@@ -132,7 +132,7 @@ function Dashboard({ user, setUser }) {
            HEADER
         ═══════════════════════════════ */
         .db-header {
-          background: var(--dark);
+          background: linear-gradient(180deg, #1c1f2e 0%, #12141c 100%);
           height: 68px;
           padding: 0 28px;
           display: flex;
@@ -142,8 +142,8 @@ function Dashboard({ user, setUser }) {
           position: sticky;
           top: 0;
           z-index: 100;
-          border-bottom: 1px solid var(--dark-border);
-          /* Subtle noise texture overlay */
+          border-bottom: 1px solid rgba(255,255,255,0.09);
+          box-shadow: 0 2px 24px rgba(0,0,0,0.4);
           isolation: isolate;
           animation: fadeSlideDown 0.45s cubic-bezier(0.22,1,0.36,1) both;
         }
@@ -167,7 +167,7 @@ function Dashboard({ user, setUser }) {
           top: 0; left: 0; right: 0;
           height: 2px;
           background: linear-gradient(90deg, transparent 0%, var(--amber) 30%, var(--amber-dim) 60%, transparent 100%);
-          opacity: 0.7;
+          opacity: 0.85;
         }
 
         /* ── Left ── */
@@ -180,15 +180,25 @@ function Dashboard({ user, setUser }) {
         .db-logo-wrap {
           display: flex;
           align-items: center;
-          padding-right: 22px;
           position: relative;
+          padding-right: 22px;
+          background: radial-gradient(ellipse at center, rgba(245,158,11,0.15) 0%, transparent 70%);
+          border-radius: 12px;
+          padding: 4px 16px 4px 8px;
         }
 
-        /* Vertical separator with amber accent */
+        .db-logo-img {
+          height: 48px;
+          width: auto;
+          object-fit: contain;
+          transition: opacity 0.2s;
+        }
+
+        /* Vertical separator */
         .db-sep {
           width: 1px;
           height: 34px;
-          background: linear-gradient(180deg, transparent, var(--dark-border) 30%, var(--dark-border) 70%, transparent);
+          background: linear-gradient(180deg, transparent, rgba(255,255,255,0.1) 30%, rgba(255,255,255,0.1) 70%, transparent);
           margin: 0 22px 0 0;
           flex-shrink: 0;
         }
@@ -243,14 +253,14 @@ function Dashboard({ user, setUser }) {
           display: flex;
           align-items: center;
           gap: 10px;
-          background: var(--dark-3);
-          border: 1px solid var(--dark-border);
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
           border-radius: 10px;
           padding: 8px 14px;
           margin-right: 4px;
           transition: border-color 0.2s;
         }
-        .db-clock:hover { border-color: rgba(255,255,255,0.12); }
+        .db-clock:hover { border-color: rgba(255,255,255,0.14); }
 
         .db-clock-icon {
           color: var(--amber);
@@ -288,7 +298,7 @@ function Dashboard({ user, setUser }) {
         .db-hdivider {
           width: 1px;
           height: 28px;
-          background: var(--dark-border);
+          background: rgba(255,255,255,0.08);
           margin: 0 4px;
           flex-shrink: 0;
         }
@@ -298,13 +308,13 @@ function Dashboard({ user, setUser }) {
           display: flex;
           align-items: center;
           gap: 10px;
-          background: var(--dark-3);
-          border: 1px solid var(--dark-border);
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
           border-radius: 10px;
           padding: 6px 12px 6px 6px;
           transition: border-color 0.2s;
         }
-        .db-user-pill:hover { border-color: rgba(255,255,255,0.12); }
+        .db-user-pill:hover { border-color: rgba(255,255,255,0.14); }
 
         .db-avatar {
           width: 32px;
@@ -355,8 +365,8 @@ function Dashboard({ user, setUser }) {
         /* Notification btn */
         .db-notif-btn {
           position: relative;
-          background: var(--dark-3);
-          border: 1px solid var(--dark-border);
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
           border-radius: 10px;
           width: 40px;
           height: 40px;
@@ -369,9 +379,9 @@ function Dashboard({ user, setUser }) {
           flex-shrink: 0;
         }
         .db-notif-btn:hover {
-          background: rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.08);
           color: var(--text-primary);
-          border-color: rgba(255,255,255,0.12);
+          border-color: rgba(255,255,255,0.14);
         }
 
         .db-notif-badge {
@@ -380,7 +390,7 @@ function Dashboard({ user, setUser }) {
           width: 7px; height: 7px;
           background: var(--amber);
           border-radius: 50%;
-          border: 1.5px solid var(--dark);
+          border: 1.5px solid #12141c;
           animation: pulse-dot 2.5s ease-in-out infinite;
         }
 
@@ -409,18 +419,14 @@ function Dashboard({ user, setUser }) {
           border-color: rgba(239,68,68,0.4);
           color: #fca5a5;
         }
-        .db-logout-btn svg {
-          transition: transform 0.2s;
-        }
-        .db-logout-btn:hover svg {
-          transform: translateX(2px);
-        }
+        .db-logout-btn svg { transition: transform 0.2s; }
+        .db-logout-btn:hover svg { transform: translateX(2px); }
 
         /* ═══════════════════════════════
            SUBHEADER — context bar
         ═══════════════════════════════ */
         .db-subheader {
-          background: var(--dark-2);
+          background: #0f1117;
           border-bottom: 1px solid var(--dark-border-2);
           padding: 0 28px;
           height: 40px;
@@ -499,11 +505,15 @@ function Dashboard({ user, setUser }) {
         <header className="db-header">
           <div className="db-header-left">
             <div className="db-logo-wrap">
-              <img src={logo} alt="DeltaPlus" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+              <img
+                src={logo}
+                alt="DeltaPlus"
+                className="db-logo-img"
+              />
             </div>
             <div className="db-sep" />
             <div className="db-breadcrumb">
-              <span className="db-breadcrumb-home">DeltaPlus</span>
+
               <span className="db-breadcrumb-arrow">›</span>
               <div className="db-breadcrumb-current">
                 <span className={`db-role-dot ${isAdmin ? 'admin' : 'driver'}`} />

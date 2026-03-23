@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import logo from '../assets/logo.png';
+import logo from '../assets/deltaplus.png';
 import API_URL from '../config';
 
 function Login({ setUser }) {
@@ -347,7 +347,7 @@ function Login({ setUser }) {
           margin-bottom: 32px;
         }
         .lg-form-logo img {
-          height: 52px; width: auto; object-fit: contain;
+          height: 85px; width: auto; object-fit: contain;
         }
 
         /* Heading */
