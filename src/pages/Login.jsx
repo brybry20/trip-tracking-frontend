@@ -38,7 +38,22 @@ function Login({ setUser }) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=JetBrains+Mono:wght@400;500&display=swap');
+        /* Minimalist Arial-only font stack */
+        * {
+          font-family: 'Arial', 'Helvetica', sans-serif !important;
+        }
+
+        /* Headings and strong text use Arial Black for weight variation */
+        h1, h2, h3, h4, .lg-hero-title, .lg-form-title, strong, .lg-feature-text strong,
+        .lg-brand-name, .lg-submit, .lg-footer a, .lg-label {
+          font-family: 'Arial Black', 'Arial', 'Helvetica', sans-serif !important;
+        }
+
+        /* Monospace elements use Arial (no monospace) */
+        .lg-eyebrow, .lg-caption, .lg-secure {
+          font-family: 'Arial', 'Helvetica', sans-serif !important;
+          letter-spacing: normal;
+        }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body, #root { width: 100%; height: 100%; overflow: hidden; }
@@ -77,10 +92,6 @@ function Login({ setUser }) {
           0%,100%{ opacity:0.5; transform:scaleX(1); }
           50%{ opacity:1; transform:scaleX(1.04); }
         }
-        @keyframes float-card {
-          0%,100%{ transform:translateY(0px); }
-          50%{ transform:translateY(-8px); }
-        }
         @keyframes shimmer {
           0%{ background-position:-200% center; }
           100%{ background-position:200% center; }
@@ -95,7 +106,6 @@ function Login({ setUser }) {
           display: flex;
           width: 100vw;
           height: 100vh;
-          font-family: 'DM Sans', sans-serif;
           overflow: hidden;
           background: var(--dark);
         }
@@ -193,14 +203,12 @@ function Login({ setUser }) {
           background: linear-gradient(135deg, var(--amber), var(--amber-dim));
           border-radius: 10px;
           display: flex; align-items: center; justify-content: center;
-          font-family: 'Syne', sans-serif;
           font-weight: 800; font-size: 17px;
           color: var(--dark); flex-shrink: 0;
           box-shadow: 0 4px 16px rgba(245,158,11,0.3);
         }
 
         .lg-brand-name {
-          font-family: 'Syne', sans-serif;
           font-weight: 700; font-size: 17px;
           color: var(--text-primary); letter-spacing: -0.2px;
         }
@@ -220,7 +228,6 @@ function Login({ setUser }) {
           text-transform: uppercase;
           color: var(--amber);
           margin-bottom: 20px;
-          font-family: 'JetBrains Mono', monospace;
         }
 
         .lg-eyebrow::before {
@@ -232,7 +239,6 @@ function Login({ setUser }) {
         }
 
         .lg-hero-title {
-          font-family: 'Syne', sans-serif;
           font-size: clamp(32px, 3.2vw, 44px);
           font-weight: 800;
           color: var(--text-primary);
@@ -305,7 +311,6 @@ function Login({ setUser }) {
         .lg-caption {
           font-size: 11px;
           color: var(--text-dim);
-          font-family: 'JetBrains Mono', monospace;
           letter-spacing: 0.4px;
           animation: fadeIn 0.6s 0.5s ease both;
         }
@@ -357,7 +362,6 @@ function Login({ setUser }) {
         }
 
         .lg-form-title {
-          font-family: 'Syne', sans-serif;
           font-size: 26px; font-weight: 800;
           color: #0a0c10; letter-spacing: -0.7px;
           margin-bottom: 6px;
@@ -420,7 +424,6 @@ function Login({ setUser }) {
           border: 1.5px solid #e5e7eb;
           border-radius: 10px;
           font-size: 14.5px;
-          font-family: 'DM Sans', sans-serif;
           color: #111827;
           background: #ffffff;
           outline: none;
@@ -474,7 +477,6 @@ function Login({ setUser }) {
           border: none;
           border-radius: 10px;
           font-size: 14.5px;
-          font-family: 'DM Sans', sans-serif;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
@@ -545,7 +547,6 @@ function Login({ setUser }) {
           margin-top: 20px;
           font-size: 11.5px;
           color: #c4c9d0;
-          font-family: 'JetBrains Mono', monospace;
           letter-spacing: 0.3px;
         }
 

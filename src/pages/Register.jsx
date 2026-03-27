@@ -41,7 +41,22 @@ function Register() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=JetBrains+Mono:wght@400;500&display=swap');
+        /* Minimalist Arial-only font stack */
+        * {
+          font-family: 'Arial', 'Helvetica', sans-serif !important;
+        }
+
+        /* Headings and strong text use Arial Black for weight variation */
+        h1, h2, h3, h4, .rg-hero-title, .rg-form-title, strong, .rg-step-title,
+        .rg-brand-name, .rg-submit, .rg-footer a, .rg-label {
+          font-family: 'Arial Black', 'Arial', 'Helvetica', sans-serif !important;
+        }
+
+        /* Monospace elements use Arial (no monospace) */
+        .rg-eyebrow, .rg-caption, .rg-secure, .rg-step-num {
+          font-family: 'Arial', 'Helvetica', sans-serif !important;
+          letter-spacing: normal;
+        }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body, #root { width: 100%; height: 100%; overflow: hidden; }
@@ -87,7 +102,6 @@ function Register() {
         .rg-root {
           position: fixed; inset: 0;
           display: flex; width: 100vw; height: 100vh;
-          font-family: 'DM Sans', sans-serif;
           overflow: hidden;
           background: var(--dark);
         }
@@ -160,12 +174,12 @@ function Register() {
           background: linear-gradient(135deg, var(--amber), var(--amber-dim));
           border-radius: 10px;
           display: flex; align-items: center; justify-content: center;
-          font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px;
+          font-weight: 800; font-size: 17px;
           color: var(--dark); flex-shrink: 0;
           box-shadow: 0 4px 16px rgba(245,158,11,0.28);
         }
         .rg-brand-name {
-          font-family: 'Syne', sans-serif; font-weight: 700;
+          font-weight: 700;
           font-size: 17px; color: var(--text-primary); letter-spacing: -0.2px;
         }
 
@@ -177,7 +191,6 @@ function Register() {
           font-size: 10.5px; font-weight: 700; letter-spacing: 1.8px;
           text-transform: uppercase; color: var(--amber);
           margin-bottom: 18px;
-          font-family: 'JetBrains Mono', monospace;
         }
         .rg-eyebrow::before {
           content: ''; display: inline-block;
@@ -185,7 +198,6 @@ function Register() {
         }
 
         .rg-hero-title {
-          font-family: 'Syne', sans-serif;
           font-size: clamp(28px, 2.8vw, 40px);
           font-weight: 800; color: var(--text-primary);
           letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 18px;
@@ -225,7 +237,6 @@ function Register() {
           background: rgba(245,158,11,0.08);
           border: 1px solid rgba(245,158,11,0.2);
           color: var(--amber);
-          font-family: 'JetBrains Mono', monospace;
           font-size: 11px; font-weight: 600;
           display: flex; align-items: center; justify-content: center;
           flex-shrink: 0; margin-top: 1px;
@@ -237,7 +248,6 @@ function Register() {
 
         .rg-caption {
           font-size: 11px; color: var(--text-dim);
-          font-family: 'JetBrains Mono', monospace;
           letter-spacing: 0.4px;
           animation: fadeIn 0.6s 0.5s ease both;
         }
@@ -271,7 +281,6 @@ function Register() {
         .rg-form-heading { text-align: center; margin-bottom: 22px; }
 
         .rg-form-title {
-          font-family: 'Syne', sans-serif;
           font-size: 24px; font-weight: 800;
           color: #0a0c10; letter-spacing: -0.7px; margin-bottom: 5px;
         }
@@ -320,7 +329,7 @@ function Register() {
         .rg-input {
           width: 100%; padding: 11px 12px 11px 38px;
           border: 1.5px solid #e5e7eb; border-radius: 9px;
-          font-size: 13.5px; font-family: 'DM Sans', sans-serif;
+          font-size: 13.5px;
           color: #111827; background: #ffffff; outline: none;
           transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
         }
@@ -346,7 +355,7 @@ function Register() {
           width: 100%; padding: 13px;
           background: #0a0c10; color: #ffffff; border: none;
           border-radius: 10px; font-size: 14.5px;
-          font-family: 'DM Sans', sans-serif; font-weight: 600;
+          font-weight: 600;
           cursor: pointer; margin-top: 14px;
           transition: all 0.2s;
           display: flex; align-items: center; justify-content: center; gap: 9px;
@@ -385,7 +394,7 @@ function Register() {
         .rg-secure {
           display: flex; align-items: center; justify-content: center; gap: 6px;
           margin-top: 16px; font-size: 11px; color: #c4c9d0;
-          font-family: 'JetBrains Mono', monospace; letter-spacing: 0.3px;
+          letter-spacing: 0.3px;
         }
         .rg-secure-dot {
           width: 5px; height: 5px; border-radius: 50%;
