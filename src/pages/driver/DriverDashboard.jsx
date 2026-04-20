@@ -272,7 +272,12 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
   const [locationError, setLocationError] = useState('');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
-  // Trip form - UPDATED with three time fields
+  // NEW: Odometer fields
+  const [departureOdometer, setDepartureOdometer] = useState('');
+  const [arrivalOdometer, setArrivalOdometer] = useState('');
+  const [computedDistance, setComputedDistance] = useState(null);
+
+  // Trip form - UPDATED with odometer fields
   const [tripForm, setTripForm] = useState({
     date: new Date().toISOString().split('T')[0],
     helper: '',
@@ -284,6 +289,16 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
   });
   const [invoices, setInvoices] = useState([{ invoice_no: '', amount: '' }]);
   const [checks, setChecks] = useState([{ check_no: '', amount: '' }]);
+
+  // Compute distance when odometer values change
+  useEffect(() => {
+    if (departureOdometer && arrivalOdometer) {
+      const dist = parseFloat(arrivalOdometer) - parseFloat(departureOdometer);
+      setComputedDistance(dist > 0 ? dist : 0);
+    } else {
+      setComputedDistance(null);
+    }
+  }, [departureOdometer, arrivalOdometer]);
 
   // Refs that mirror state
   const tripFormRef = useRef(tripForm);
@@ -353,19 +368,26 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
   const removeCheckRow = i => setChecks(p => p.length > 1 ? p.filter((_, idx) => idx !== i) : p);
   const handleCheckChange = (i, f, v) => setChecks(p => { const n = [...p]; n[i][f] = v; return n; });
 
-  // START TRIP (RECORD DEPARTURE)
+  // START TRIP (RECORD DEPARTURE with odometer)
   const handleStartTrip = async () => {
     if (!tripForm.helper.trim()) { addToast('Please enter a helper name.', 'error', 'Missing Field'); return; }
     if (!tripForm.dealer.trim()) { addToast('Please enter a dealer name.', 'error', 'Missing Field'); return; }
+    if (!departureOdometer) { addToast('Please enter departure odometer reading.', 'error', 'Missing Field'); return; }
     if (!currentLocation) { addToast('GPS location is required. Please wait for detection.', 'error', 'Location Required'); return; }
 
-    showLoading('Starting Trip…', 'Recording departure time and GPS location');
+    showLoading('Starting Trip…', 'Recording departure time, odometer, and GPS location');
     try {
       const validInvoices = invoices.filter(inv => inv.invoice_no && inv.amount);
       const validChecks = checks.filter(chk => chk.check_no && chk.amount);
       const res = await fetch(`${API_URL}/trips`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...tripForm, invoices: validInvoices, checks: validChecks, location: currentLocation }),
+        body: JSON.stringify({ 
+          ...tripForm, 
+          invoices: validInvoices, 
+          checks: validChecks, 
+          location: currentLocation,
+          departure_odometer: parseFloat(departureOdometer)
+        }),
         credentials: 'include'
       });
       const data = await res.json();
@@ -392,7 +414,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
 
         await fetchTrips();
         hideLoading();
-        addToast(`Trip started at ${formatTimeDisplay(data.time_departure)}`, 'success', 'Trip Started');
+        addToast(`Trip started at ${formatTimeDisplay(data.time_departure)} with odometer ${departureOdometer} km`, 'success', 'Trip Started');
       } else {
         hideLoading();
         addToast(data.message || 'Failed to start trip.', 'error', 'Error');
@@ -430,23 +452,28 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
     }
   };
 
-  // END TRIP (RECORD UNLOAD END)
+  // END TRIP (RECORD UNLOAD END with arrival odometer)
   const handleEndTrip = async () => {
     if (!editingTrip) { addToast('Please start the trip first.', 'error', 'No Active Trip'); return; }
     if (!editingTrip.time_arrival) { addToast('Please record arrival first.', 'error', 'Missing Arrival'); return; }
-    if (!tripForm.odometer) { addToast('Please enter the odometer reading before ending.', 'error', 'Missing Field'); return; }
+    if (!arrivalOdometer) { addToast('Please enter arrival odometer reading before ending.', 'error', 'Missing Field'); return; }
     if (editingTrip.time_unload_end) { addToast('Trip already ended.', 'error', 'Already Ended'); return; }
     if (editingTrip.is_completed) { addToast('Trip is already completed.', 'error', 'Already Completed'); return; }
 
-    showLoading('Ending Trip…', 'Saving all details and recording completion time');
+    showLoading('Ending Trip…', 'Saving all details, arrival odometer, and recording completion time');
     try {
-      // Save latest details first
+      // Save latest details first including arrival odometer
       const validInvoices = invoices.filter(inv => inv.invoice_no && inv.amount);
       const validChecks = checks.filter(chk => chk.check_no && chk.amount);
       
       await fetch(`${API_URL}/trips/${editingTrip.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...tripForm, invoices: validInvoices, checks: validChecks }),
+        body: JSON.stringify({ 
+          ...tripForm, 
+          invoices: validInvoices, 
+          checks: validChecks,
+          arrival_odometer: parseFloat(arrivalOdometer)
+        }),
         credentials: 'include'
       });
       
@@ -459,7 +486,8 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         setEditingTrip(prev => ({ ...prev, time_unload_end: data.time_unload_end, is_completed: true }));
         await fetchTrips();
         hideLoading();
-        addToast(`Trip completed! Unload time: ${data.unload_duration}, Total trip: ${data.total_duration}`, 'success', 'Trip Ended');
+        const distanceMsg = computedDistance ? ` | Distance: ${computedDistance.toFixed(1)} km` : '';
+        addToast(`Trip completed! Unload time: ${data.unload_duration}, Total trip: ${data.total_duration}${distanceMsg}`, 'success', 'Trip Ended');
       } else {
         hideLoading();
         addToast(data.message || 'Failed to end trip.', 'error', 'Error');
@@ -483,6 +511,9 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
     });
     setInvoices([{ invoice_no: '', amount: '' }]);
     setChecks([{ check_no: '', amount: '' }]);
+    setDepartureOdometer('');
+    setArrivalOdometer('');
+    setComputedDistance(null);
     setCurrentLocation(null);
     setLocationError('');
     setIsGettingLocation(false);
@@ -503,6 +534,8 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
       odometer: trip.odometer || '',
       dealer: trip.dealer || '',
     });
+    setDepartureOdometer(trip.departure_odometer ? String(trip.departure_odometer) : '');
+    setArrivalOdometer(trip.arrival_odometer ? String(trip.arrival_odometer) : '');
     
     if (trip.invoices?.length > 0) {
       setInvoices(trip.invoices.map(inv => ({ invoice_no: inv.invoice_no, amount: String(inv.amount) })));
@@ -557,7 +590,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
     if (!editingTripRef.current) return;
     if (!tripFormRef.current.helper.trim()) { addToast('Helper name is required.', 'error', 'Missing Field'); return; }
     if (!tripFormRef.current.dealer.trim()) { addToast('Dealer name is required.', 'error', 'Missing Field'); return; }
-    if (!tripFormRef.current.odometer) { addToast('Odometer reading is required.', 'error', 'Missing Field'); return; }
+    if (!tripFormRef.current.odometer && !arrivalOdometer) { addToast('Odometer reading is required.', 'error', 'Missing Field'); return; }
 
     setConfirm({
       open: true, title: 'Update Trip',
@@ -577,9 +610,15 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         try {
           const validInvoices = invs.filter(inv => inv.invoice_no && inv.amount);
           const validChecks = chks.filter(chk => chk.check_no && chk.amount);
+          const updateData = { 
+            ...form, 
+            invoices: validInvoices, 
+            checks: validChecks,
+            arrival_odometer: arrivalOdometer ? parseFloat(arrivalOdometer) : null
+          };
           const res = await fetch(`${API_URL}/trips/${activeTrip.id}`, {
             method: 'PUT', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...form, invoices: validInvoices, checks: validChecks }),
+            body: JSON.stringify(updateData),
             credentials: 'include'
           });
           const data = await res.json();
@@ -604,7 +643,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
   const tripsArray = Array.isArray(trips) ? trips : [];
   const myTrips = tripsArray.filter(t => t.driver_name === driverInfo?.full_name);
   const todayTrips = myTrips.filter(t => t.date === new Date().toISOString().split('T')[0]);
-  const totalKm = myTrips.reduce((sum, t) => sum + (parseFloat(t.odometer) || 0), 0);
+  const totalKm = myTrips.reduce((sum, t) => sum + (parseFloat(t.departure_odometer || t.odometer) || 0), 0);
   const dealers = useMemo(() => [...new Set(myTrips.map(t => t.dealer).filter(Boolean))], [myTrips]);
 
   const filteredTrips = useMemo(() => myTrips.filter(t => {
@@ -620,7 +659,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
 
   // Export
   const exportToCSV = () => {
-    const headers = ['Date', 'Driver', 'Helper', 'Dealer', 'Time Departure', 'Time Arrival', 'Time Unload End', 'Odometer (km)', 'Invoices', 'Checks', 'Location Lat', 'Location Lng', 'Google Maps Link'];
+    const headers = ['Date', 'Driver', 'Helper', 'Dealer', 'Time Departure', 'Time Arrival', 'Time Unload End', 'Departure Odometer', 'Arrival Odometer', 'Distance (km)', 'Odometer (km)', 'Invoices', 'Checks', 'Location Lat', 'Location Lng', 'Google Maps Link'];
     const rows = filteredTrips.map(trip => {
       const mapsLink = trip.location_lat && trip.location_lng
         ? `https://www.google.com/maps?q=${trip.location_lat},${trip.location_lng}` : '';
@@ -629,8 +668,11 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         : trip.invoice_no ? `${trip.invoice_no} (₱${trip.amount || 0})` : '';
       const checksStr = trip.checks?.length > 0
         ? trip.checks.map(chk => `${chk.check_no} (₱${chk.amount})`).join('; ') : '';
+      const distance = trip.departure_odometer && trip.arrival_odometer ? (trip.arrival_odometer - trip.departure_odometer).toFixed(1) : '';
       return [trip.date, trip.driver_name, trip.helper || '', trip.dealer,
-        trip.time_departure || '', trip.time_arrival || '', trip.time_unload_end || '', trip.odometer || '',
+        trip.time_departure || '', trip.time_arrival || '', trip.time_unload_end || '',
+        trip.departure_odometer || '', trip.arrival_odometer || '', distance,
+        trip.odometer || '',
         invoicesStr, checksStr, trip.location_lat || '', trip.location_lng || '', mapsLink];
     });
     const csv = [headers, ...rows].map(r => r.map(c => `"${(c ?? '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -673,7 +715,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
   );
 
   const tripEnded = !!(editingTrip?.time_unload_end || editingTrip?.is_completed);
-  const canEditTime = !editingTrip?.is_completed; // Time fields cannot be edited after completion
+  const isEditingExisting = !!editingTrip;
 
   /* ── RENDER ─────────────────────────────────────────────────────────── */
   return (
@@ -730,6 +772,13 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         .dd-input{padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:16px;font-family:'DM Sans',sans-serif;color:#111827;background:#fff;transition:border-color .18s,box-shadow .18s;outline:none;width:100%;-webkit-appearance:none;appearance:none}
         .dd-input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.1)}
         .dd-input:disabled{background:#f9fafb;color:#9ca3af;cursor:not-allowed}
+        .dd-odometer-group{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:16px}
+        .dd-odometer-field{text-align:center}
+        .dd-odometer-label{font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:1px;margin-bottom:6px}
+        .dd-odometer-input{padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:16px;font-weight:700;text-align:center;background:#fff;width:100%}
+        .dd-distance-badge{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;text-align:center;margin-bottom:16px}
+        .dd-distance-label{font-size:11px;color:#166534;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+        .dd-distance-value{font-size:24px;font-weight:800;color:#10b981}
 
         /* Date Picker */
         .dd-date-field{position:relative;background:#f8fafc;border:1.5px solid #e5e7eb;border-radius:10px;overflow:hidden;transition:border-color .18s,box-shadow .18s}
@@ -838,6 +887,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
           .dd-add-btn{width:100%;justify-content:center;padding:14px}
           .dd-form-card{padding:16px}
           .dd-form-grid{grid-template-columns:1fr!important}
+          .dd-odometer-group{grid-template-columns:1fr!important;gap:10px}
           .dd-trip-buttons{grid-template-columns:1fr!important;gap:8px}
           .dd-trip-btn{padding:14px}
           .dd-input{font-size:16px;padding:13px 14px}
@@ -957,6 +1007,43 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                   <input className="dd-input" type="text" name="dealer" value={tripForm.dealer} onChange={handleInputChange} placeholder="Dealer name" />
                 </div>
               </div>
+
+              {/* ODOMETER SECTION - NEW */}
+              <div className="dd-odometer-group">
+                <div className="dd-odometer-field">
+                  <div className="dd-odometer-label">DEPARTURE ODOMETER</div>
+                  <input 
+                    type="number" 
+                    className="dd-odometer-input" 
+                    value={departureOdometer} 
+                    onChange={(e) => setDepartureOdometer(e.target.value)}
+                    placeholder="0 km"
+                    disabled={!!editingTrip}
+                    step="0.1"
+                  />
+                </div>
+                <div style={{ fontSize: 20, color: '#f59e0b', fontWeight: 'bold' }}>→</div>
+                <div className="dd-odometer-field">
+                  <div className="dd-odometer-label">ARRIVAL ODOMETER</div>
+                  <input 
+                    type="number" 
+                    className="dd-odometer-input" 
+                    value={arrivalOdometer} 
+                    onChange={(e) => setArrivalOdometer(e.target.value)}
+                    placeholder="0 km"
+                    disabled={!editingTrip || tripEnded}
+                    step="0.1"
+                  />
+                </div>
+              </div>
+
+              {/* Distance Display */}
+              {computedDistance !== null && (
+                <div className="dd-distance-badge">
+                  <div className="dd-distance-label">📏 DISTANCE TRAVELED</div>
+                  <div className="dd-distance-value">{computedDistance.toFixed(1)} km</div>
+                </div>
+              )}
 
               {/* Trip Buttons - Three buttons */}
               <div className="dd-trip-buttons">
@@ -1169,11 +1256,15 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                     <th>Departure</th>
                     <th>Arrival</th>
                     <th>Unload End</th>
+                    <th>Departure ODO</th>
+                    <th>Arrival ODO</th>
+                    <th>Distance</th>
                     <th>Travel Time</th>
                     <th>Unload Time</th>
-                    <th>Odometer</th>
                     <th>Invoices</th>
                     <th>Checks</th>
+                    <th>Total Invoices</th>
+                    <th>Total Checks</th>
                     <th>Location</th>
                     <th>Actions</th>
                   </tr>
@@ -1182,6 +1273,9 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                   {filteredTrips.map(trip => {
                     const travelDuration = calcDuration(trip.time_departure, trip.time_arrival);
                     const unloadDuration = calcDuration(trip.time_arrival, trip.time_unload_end);
+                    const distance = trip.departure_odometer && trip.arrival_odometer 
+                      ? (trip.arrival_odometer - trip.departure_odometer).toFixed(1) 
+                      : null;
                     return (
                       <tr key={trip.id}>
                         <td data-label="Date"><span style={{ fontWeight: 600, color: '#0f1117' }}>{trip.date}</span></td>
@@ -1202,6 +1296,21 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                             ? <span style={{ color: '#ef4444', fontWeight: 600 }}>{formatTimeDisplay(trip.time_unload_end)}</span>
                             : <span style={{ color: '#d1d5db' }}>—</span>}
                         </td>
+                        <td data-label="Departure ODO">
+                          {trip.departure_odometer
+                            ? <span style={{ fontWeight: 600 }}>{trip.departure_odometer} km</span>
+                            : <span style={{ color: '#d1d5db' }}>—</span>}
+                        </td>
+                        <td data-label="Arrival ODO">
+                          {trip.arrival_odometer
+                            ? <span style={{ fontWeight: 600 }}>{trip.arrival_odometer} km</span>
+                            : <span style={{ color: '#d1d5db' }}>—</span>}
+                        </td>
+                        <td data-label="Distance">
+                          {distance
+                            ? <span style={{ color: '#10b981', fontWeight: 700 }}>{distance} km</span>
+                            : <span style={{ color: '#d1d5db' }}>—</span>}
+                        </td>
                         <td data-label="Travel Time">
                           {travelDuration
                             ? <span style={{ background: '#f3f4f6', borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 600, color: '#374151' }}>{travelDuration}</span>
@@ -1212,21 +1321,28 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                             ? <span style={{ background: '#f3f4f6', borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 600, color: '#374151' }}>{unloadDuration}</span>
                             : <span style={{ color: '#d1d5db' }}>—</span>}
                         </td>
-                        <td data-label="Odometer">{trip.odometer ? `${trip.odometer} km` : <span style={{ color: '#d1d5db' }}>—</span>}</td>
                         <td data-label="Invoices">
                           {trip.invoices?.length > 0
                             ? <div style={{ fontSize: 13 }}>{trip.invoices.map((inv, i) => (
-                              <div key={i}>{inv.invoice_no}: <span style={{ color: '#d97706', fontWeight: 600 }}>₱{Number(inv.amount).toLocaleString()}</span></div>
-                            ))}</div>
-                            : trip.invoice_no
-                              ? <div>{trip.invoice_no}: <span style={{ color: '#d97706', fontWeight: 600 }}>₱{trip.amount}</span></div>
-                              : <span style={{ color: '#d1d5db' }}>—</span>}
+                                <div key={i}>{inv.invoice_no}: <span style={{ color: '#d97706', fontWeight: 600 }}>₱{Number(inv.amount).toLocaleString()}</span></div>
+                              ))}</div>
+                            : <span style={{ color: '#d1d5db' }}>—</span>}
                         </td>
                         <td data-label="Checks">
                           {trip.checks?.length > 0
                             ? <div style={{ fontSize: 13 }}>{trip.checks.map((chk, i) => (
-                              <div key={i}>{chk.check_no}: <span style={{ color: '#10b981', fontWeight: 600 }}>₱{Number(chk.amount).toLocaleString()}</span></div>
-                            ))}</div>
+                                <div key={i}>{chk.check_no}: <span style={{ color: '#10b981', fontWeight: 600 }}>₱{Number(chk.amount).toLocaleString()}</span></div>
+                              ))}</div>
+                            : <span style={{ color: '#d1d5db' }}>—</span>}
+                        </td>
+                        <td data-label="Total Invoices">
+                          {trip.total_invoices > 0
+                            ? <span style={{ color: '#d97706', fontWeight: 700, fontSize: 16 }}>₱{trip.total_invoices.toLocaleString()}</span>
+                            : <span style={{ color: '#d1d5db' }}>—</span>}
+                        </td>
+                        <td data-label="Total Checks">
+                          {trip.total_checks > 0
+                            ? <span style={{ color: '#10b981', fontWeight: 700, fontSize: 16 }}>₱{trip.total_checks.toLocaleString()}</span>
                             : <span style={{ color: '#d1d5db' }}>—</span>}
                         </td>
                         <td data-label="Location">

@@ -314,17 +314,12 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   const [loadingUpdate, setLoadingUpdate]       = useState(false);
 
   // ── INTERNAL TRIPS STATE ────────────────────────────────────────────────
-  // We maintain our own copy of trips fetched directly inside this component.
-  // This is the KEY fix: we compare new data vs old data BEFORE calling
-  // setState, so notifications fire on every real change — not just when the
-  // parent prop reference happens to change.
   const [mainTrips, setMainTrips] = useState(propTrips || []);
 
   // Snapshot of the previous poll for diff comparison
-  const prevTripsRef   = useRef(null);   // Map<id, trip>
-  const isFirstLoadRef = useRef(true);   // skip notifications on first load
+  const prevTripsRef   = useRef(null);
+  const isFirstLoadRef = useRef(true);
   const intervalRef    = useRef(null);
-  // ────────────────────────────────────────────────────────────────────────
 
   // Notification state
   const [notifications, setNotifications]         = useState([]);
@@ -387,14 +382,8 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
     } catch(e) { console.warn('Notification error:', e); }
   }, []);
 
-  /* ── CORE FIX: runNotificationDiff ─────────────────────────────────────
-     Called with the freshly-fetched array BEFORE it is committed to state.
-     Compares against prevTripsRef and fires notifications for anything new
-     or changed. This runs on every poll cycle regardless of whether React
-     decides to re-render, so notifications are never missed.
-  ─────────────────────────────────────────────────────────────────────── */
+  /* ── CORE FIX: runNotificationDiff ───────────────────────────────────── */
   const runNotificationDiff = useCallback((freshTrips) => {
-    // First ever load — just snapshot, no alerts
     if (isFirstLoadRef.current) {
       prevTripsRef.current = new Map(freshTrips.map(t => [t.id, t]));
       isFirstLoadRef.current = false;
@@ -447,33 +436,24 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
       if (soundEnabled) playNotificationSound();
     }
 
-    // Always update snapshot after diff
     prevTripsRef.current = new Map(freshTrips.map(t => [t.id, t]));
-  // soundEnabled read at call-time so intentionally omitted from deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addToast, sendBrowserNotif]);
+  }, [addToast, sendBrowserNotif, soundEnabled]);
 
-  /* ── Internal fetchMainTrips ────────────────────────────────────────────
-     This replaces relying on the parent prop for polling.
-     We fetch, diff, THEN set state — guaranteeing notifications fire even
-     if the data is "the same shape" from React's perspective.
-  ─────────────────────────────────────────────────────────────────────── */
+  /* ── Internal fetchMainTrips ── */
   const fetchMainTrips = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/trips`, { credentials:'include' });
       const data = await res.json();
       const fresh = Array.isArray(data) ? data : (data.trips || []);
-      // ← diff happens HERE, before setState
       runNotificationDiff(fresh);
       setMainTrips(fresh);
-      // Also notify parent so any parent-level state stays in sync
       if (typeof parentFetchTrips === 'function') parentFetchTrips();
     } catch {
-      // silent — don't spam toasts on every failed poll
+      // silent
     }
   }, [runNotificationDiff, parentFetchTrips]);
 
-  /* ── Auto-refresh every 5 seconds ── */
+  /* ── Auto-refresh every 1 second ── */
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (!autoRefreshEnabled) return;
@@ -482,7 +462,6 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
       else fetchHistoricalData();
     }, 1000);
     return () => clearInterval(intervalRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefreshEnabled, activeDatabase, fetchMainTrips]);
 
   /* ── Reset snapshot when switching databases ── */
@@ -491,14 +470,12 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
     prevTripsRef.current = null;
     if (activeDatabase === 'historical') fetchHistoricalData();
     else { fetchMainTrips(); fetchDrivers(); }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDatabase]);
 
   /* ── Initial load ── */
   useEffect(() => {
     fetchMainTrips();
     fetchDrivers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchDrivers = async () => {
@@ -520,7 +497,6 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
       const tData = await tRes.json();
       const dData = await dRes.json();
       const freshHist = tData.trips || [];
-      // Run diff for historical too
       runNotificationDiff(freshHist);
       setHistoricalTrips(freshHist);
       setHistoricalDrivers(dData.drivers || []);
@@ -590,9 +566,8 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   };
 
   /* ── Derived data ── */
-  // Use internalTrips (mainTrips) instead of propTrips for the main DB
-  const currentDrivers = activeDatabase === 'main' ? drivers          : historicalDrivers;
-  const currentTrips   = activeDatabase === 'main' ? mainTrips        : historicalTrips;
+  const currentDrivers = activeDatabase === 'main' ? drivers : historicalDrivers;
+  const currentTrips   = activeDatabase === 'main' ? mainTrips : historicalTrips;
   const today          = () => new Date().toISOString().split('T')[0];
 
   const driverNames    = useMemo(() => [...new Set(currentTrips.map(t=>t.driver_name).filter(Boolean))], [currentTrips]);
@@ -625,19 +600,27 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
     a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
     a.download = filename; a.click();
   };
+
   const exportDrivers = () => {
     downloadCSV(['Full Name','Username','Email','Phone','License No.'],
       filteredDrivers.map(d=>[d.full_name,d.username,d.email,d.phone,d.license_number]),
       `drivers_${activeDatabase}_${today()}.csv`);
     addToast(`Exported ${filteredDrivers.length} driver(s).`, 'success', 'Export Complete');
   };
+
   const exportTrips = () => {
-    const headers = ['Date','Driver','Helper','Dealer','Time Departure','Time Arrival','Time Unload End','Odometer (km)','Invoices','Checks','Location Lat','Location Lng','Google Maps Link'];
+    const headers = ['Date', 'Driver', 'Helper', 'Dealer', 'Time Departure', 'Time Arrival', 'Time Unload End', 'Departure Odometer', 'Arrival Odometer', 'Distance (km)', 'Total Invoices', 'Total Checks', 'Invoices', 'Checks', 'Location Lat', 'Location Lng', 'Google Maps Link'];
     const rows = filteredTrips.map(t => {
       const map = t.location_lat&&t.location_lng?`https://www.google.com/maps?q=${t.location_lat},${t.location_lng}`:'';
-      const inv = t.invoices?.length>0?t.invoices.map(i=>`${i.invoice_no}(₱${i.amount})`).join(';'):t.invoice_no?`${t.invoice_no}(₱${t.amount||0})`:'';
+      const inv = t.invoices?.length>0?t.invoices.map(i=>`${i.invoice_no}(₱${i.amount})`).join(';'):'';
       const chk = t.checks?.length>0?t.checks.map(c=>`${c.check_no}(₱${c.amount})`).join(';'):'';
-      return [t.date,t.driver_name,t.helper||'',t.dealer,t.time_departure||'',t.time_arrival||'',t.time_unload_end||'',t.odometer||'',inv,chk,t.location_lat||'',t.location_lng||'',map];
+      const totalInv = t.total_invoices || 0;
+      const totalChk = t.total_checks || 0;
+      const distance = t.departure_odometer && t.arrival_odometer ? (t.arrival_odometer - t.departure_odometer).toFixed(1) : '';
+      return [t.date, t.driver_name, t.helper||'', t.dealer,
+        t.time_departure||'', t.time_arrival||'', t.time_unload_end||'',
+        t.departure_odometer||'', t.arrival_odometer||'', distance,
+        totalInv, totalChk, inv, chk, t.location_lat||'', t.location_lng||'', map];
     });
     downloadCSV(headers, rows, `trips_${activeDatabase}_${today()}.csv`);
     addToast(`Exported ${filteredTrips.length} trip(s).`, 'success', 'Export Complete');
@@ -953,7 +936,7 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
           </div>
         )}
 
-        {/* ── TRIPS ── */}
+        {/* ── TRIPS TAB ── (UPDATED with odometer, distance, totals) */}
         {view==='trips' && (
           <div className="ad-card">
             <div className="ad-card-header">
@@ -996,24 +979,41 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
               filteredTrips.length===0 ? <div className="ad-empty"><div className="ad-empty-icon"><TruckIcon/></div>{hasTripFilters?'No trips match your filters.':'No trips in this database.'}</div> :
               <div className="ad-table-wrap">
                 <table className="ad-table">
-                  <thead><tr><th>Date</th><th>Driver</th><th>Helper</th><th>Dealer</th><th>Departure</th><th>Arrival</th><th>Unload End</th><th>Odometer</th><th>Invoices</th><th>Checks</th><th>Location</th><th>Actions</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Date</th><th>Driver</th><th>Helper</th><th>Dealer</th>
+                      <th>Departure</th><th>Arrival</th><th>Unload End</th>
+                      <th>Dep. ODO</th><th>Arr. ODO</th><th>Distance</th>
+                      
+                      <th>Invoices</th><th>Checks</th>
+                      <th>Total Inv</th><th>Total Chk</th>
+                      <th>Location</th><th>Actions</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {filteredTrips.map(trip=>(
-                      <tr key={trip.id}>
-                        <td data-label="Date"><span style={{ fontWeight:600 }}>{trip.date}</span></td>
-                        <td data-label="Driver"><div className="ad-driver-cell"><div className="ad-driver-avatar">{trip.driver_name?.charAt(0).toUpperCase()}</div><span>{trip.driver_name}</span></div></td>
-                        <td data-label="Helper">{trip.helper||'—'}</td>
-                        <td data-label="Dealer"><strong>{trip.dealer}</strong></td>
-                        <td data-label="Departure">{trip.time_departure?<span style={{ color:'#10b981',fontWeight:600 }}>{fmtTime(trip.time_departure)}</span>:'—'}</td>
-                        <td data-label="Arrival">{trip.time_arrival?<span style={{ color:'#3b82f6',fontWeight:600 }}>{fmtTime(trip.time_arrival)}</span>:'—'}</td>
-                        <td data-label="Unload End">{trip.time_unload_end?<span style={{ color:'#ef4444',fontWeight:600 }}>{fmtTime(trip.time_unload_end)}</span>:'—'}</td>
-                        <td data-label="Odometer">{trip.odometer?`${trip.odometer} km`:'—'}</td>
-                        <td data-label="Invoices">{trip.invoices?.length>0?<div>{trip.invoices.map((inv,i)=><span key={i} className="ad-invoice-badge">{inv.invoice_no}: ₱{Number(inv.amount).toLocaleString()}</span>)}</div>:'—'}</td>
-                        <td data-label="Checks">{trip.checks?.length>0?<div>{trip.checks.map((chk,i)=><span key={i} className="ad-check-badge">{chk.check_no}: ₱{Number(chk.amount).toLocaleString()}</span>)}</div>:'—'}</td>
-                        <td data-label="Location">{trip.location_lat&&trip.location_lng?<a href={`https://www.google.com/maps?q=${trip.location_lat},${trip.location_lng}`} target="_blank" rel="noopener noreferrer" className="ad-map-link">📍 View Map</a>:'—'}</td>
-                        <td data-label="Actions"><button onClick={()=>openEditModal(trip)} className="ad-edit-btn" style={{ background:'#eff6ff',color:'#3b82f6' }}>✏️ Edit</button></td>
-                      </tr>
-                    ))}
+                    {filteredTrips.map(trip=>{
+                      const distance = trip.departure_odometer && trip.arrival_odometer ? (trip.arrival_odometer - trip.departure_odometer).toFixed(1) : null;
+                      return (
+                        <tr key={trip.id}>
+                          <td data-label="Date"><span style={{ fontWeight:600 }}>{trip.date}</span></td>
+                          <td data-label="Driver"><div className="ad-driver-cell"><div className="ad-driver-avatar">{trip.driver_name?.charAt(0).toUpperCase()}</div><span>{trip.driver_name}</span></div></td>
+                          <td data-label="Helper">{trip.helper||'—'}</td>
+                          <td data-label="Dealer"><strong>{trip.dealer}</strong></td>
+                          <td data-label="Departure">{trip.time_departure?<span style={{ color:'#10b981',fontWeight:600 }}>{fmtTime(trip.time_departure)}</span>:'—'}</td>
+                          <td data-label="Arrival">{trip.time_arrival?<span style={{ color:'#3b82f6',fontWeight:600 }}>{fmtTime(trip.time_arrival)}</span>:'—'}</td>
+                          <td data-label="Unload End">{trip.time_unload_end?<span style={{ color:'#ef4444',fontWeight:600 }}>{fmtTime(trip.time_unload_end)}</span>:'—'}</td>
+                          <td data-label="Dep. ODO">{trip.departure_odometer?`${trip.departure_odometer} km`:'—'}</td>
+                          <td data-label="Arr. ODO">{trip.arrival_odometer?`${trip.arrival_odometer} km`:'—'}</td>
+                          <td data-label="Distance">{distance?<span style={{ color:'#10b981',fontWeight:700 }}>{distance} km</span>:'—'}</td>
+                          <td data-label="Invoices">{trip.invoices?.length>0?<div>{trip.invoices.map((inv,i)=><span key={i} className="ad-invoice-badge">{inv.invoice_no}: ₱{Number(inv.amount).toLocaleString()}</span>)}</div>:'—'}</td>
+                          <td data-label="Checks">{trip.checks?.length>0?<div>{trip.checks.map((chk,i)=><span key={i} className="ad-check-badge">{chk.check_no}: ₱{Number(chk.amount).toLocaleString()}</span>)}</div>:'—'}</td>
+                          <td data-label="Total Inv"><span style={{ color:'#d97706',fontWeight:700 }}>₱{(trip.total_invoices || 0).toLocaleString()}</span></td>
+                          <td data-label="Total Chk"><span style={{ color:'#10b981',fontWeight:700 }}>₱{(trip.total_checks || 0).toLocaleString()}</span></td>
+                          <td data-label="Location">{trip.location_lat&&trip.location_lng?<a href={`https://www.google.com/maps?q=${trip.location_lat},${trip.location_lng}`} target="_blank" rel="noopener noreferrer" className="ad-map-link">📍 View Map</a>:'—'}</td>
+                          <td data-label="Actions"><button onClick={()=>openEditModal(trip)} className="ad-edit-btn" style={{ background:'#eff6ff',color:'#3b82f6' }}>✏️ Edit</button></td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
