@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login';
-import Register from './components/Register';
-import DriverDashboard from './components/DriverDashboard';
-import AdminDashboard from './components/AdminDashboard';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import DriverDashboard from './pages/driver/DriverDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import API_URL, { TOKEN_KEY, USER_KEY } from './config';
 
 function App() {
