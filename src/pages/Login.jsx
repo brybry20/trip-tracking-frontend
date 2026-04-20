@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import logo from '../assets/deltaplus.png';
-import API_URL from '../config';
+
+import API_URL, { TOKEN_KEY, USER_KEY } from '../config';
 
 function Login({ setUser }) {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -23,6 +24,14 @@ function Login({ setUser }) {
       });
       const data = await res.json();
       if (data.success) {
+        // Store token and user data
+        localStorage.setItem(TOKEN_KEY, data.token);
+        localStorage.setItem(USER_KEY, JSON.stringify({
+          username: data.username,
+          role: data.role,
+          expires_in: data.expires_in
+        }));
+        
         setUser(data);
         navigate('/dashboard');
       } else {
