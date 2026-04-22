@@ -41,24 +41,24 @@ if (typeof document !== 'undefined' && !document.getElementById(DB_STYLE_ID)) {
 }
 function Dashboard({ user, setUser }) {
   const navigate = useNavigate();
-  const [drivers, setDrivers]       = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [driverInfo, setDriverInfo] = useState(null);
-  const [trips, setTrips]           = useState([]);
+  const [trips, setTrips] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [mounted, setMounted]       = useState(false);
-  const [menuOpen, setMenuOpen]     = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res  = await fetch(`${API_URL}/auth/check`, { credentials: 'include' });
+        const res = await fetch(`${API_URL}/auth/check`, { credentials: 'include' });
         const data = await res.json();
         if (!data.authenticated) {
           navigate('/login');
         } else {
           if (!user || !user.username) setUser(data);
-          if (data.role === 'driver')      fetchDriverInfo();
-          else if (data.role === 'admin')  fetchDrivers();
+          if (data.role === 'driver') fetchDriverInfo();
+          else if (data.role === 'admin') fetchDrivers();
           fetchTrips();
         }
       } catch {
@@ -81,7 +81,7 @@ function Dashboard({ user, setUser }) {
 
   const fetchDriverInfo = async () => {
     try {
-      const res  = await fetch(`${API_URL}/auth/drivers`, { credentials: 'include' });
+      const res = await fetch(`${API_URL}/auth/drivers`, { credentials: 'include' });
       const data = await res.json();
       setDriverInfo(data.find(d => d.username === user.username));
     } catch (err) { console.log(err); }
@@ -506,7 +506,7 @@ function Dashboard({ user, setUser }) {
         {/* ── Main content ── */}
         <div className="db-content">
           {isAdmin
-            ? <AdminDashboard  drivers={drivers}    trips={trips} fetchTrips={fetchTrips} />
+            ? <AdminDashboard drivers={drivers} trips={trips} fetchTrips={fetchTrips} />
             : <DriverDashboard driverInfo={driverInfo} trips={trips} fetchTrips={fetchTrips} user={user} />
           }
         </div>
@@ -518,19 +518,19 @@ function Dashboard({ user, setUser }) {
 
 /* ── Icons ── */
 function ClockIcon() {
-  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>;
 }
 function BellIcon() {
-  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
+  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>;
 }
 function LogoutIcon() {
-  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>;
 }
 function HamburgerIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>;
 }
 function CloseMenuIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>;
 }
 
 export default Dashboard;
