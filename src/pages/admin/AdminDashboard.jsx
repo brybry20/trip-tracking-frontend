@@ -4,7 +4,7 @@ import API_URL from '../../config';
 
 /* ─────────────────────────────────────────────
    GLOBAL STYLES
-───────────────────────────────────────────── */
+──────────────────────────────────────────────── */
 const AD_STYLE_ID = 'ad-global-keyframes';
 if (typeof document !== 'undefined' && !document.getElementById(AD_STYLE_ID)) {
   const s = document.createElement('style');
@@ -22,7 +22,7 @@ if (typeof document !== 'undefined' && !document.getElementById(AD_STYLE_ID)) {
 
 /* ─────────────────────────────────────────────
    SOUND HELPER
-───────────────────────────────────────────── */
+──────────────────────────────────────────────── */
 function playNotificationSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -47,7 +47,7 @@ function playNotificationSound() {
 
 /* ─────────────────────────────────────────────
    NOTIFICATION BELL
-───────────────────────────────────────────── */
+──────────────────────────────────────────────── */
 function NotificationBell({ count, onClick }) {
   return (
     <button onClick={onClick}
@@ -70,7 +70,7 @@ function NotificationBell({ count, onClick }) {
 
 /* ─────────────────────────────────────────────
    NOTIFICATION PANEL
-───────────────────────────────────────────── */
+──────────────────────────────────────────────── */
 function NotificationPanel({ notifications, onClickNotif, onClear, onClose }) {
   return ReactDOM.createPortal(
     <>
@@ -114,7 +114,7 @@ function NotificationPanel({ notifications, onClickNotif, onClear, onClose }) {
 
 /* ─────────────────────────────────────────────
    TOAST
-───────────────────────────────────────────── */
+──────────────────────────────────────────────── */
 function Toast({ toasts, removeToast }) {
   return ReactDOM.createPortal(
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999999, display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 12px 0', pointerEvents: 'none' }}>
@@ -146,7 +146,7 @@ function useToast() {
 
 /* ─────────────────────────────────────────────
    LOADING OVERLAY
-───────────────────────────────────────────── */
+──────────────────────────────────────────────── */
 function LoadingOverlay({ message = 'Loading…' }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', gap: 16 }}>
@@ -158,7 +158,7 @@ function LoadingOverlay({ message = 'Loading…' }) {
 
 /* ─────────────────────────────────────────────
    EDIT TRIP MODAL
-───────────────────────────────────────────── */
+──────────────────────────────────────────────── */
 function EditTripModal({ modal, onClose, onSubmit, tripData, setTripData, invoices, setInvoices, checks, setChecks, loading }) {
   if (!modal.open) return null;
 
@@ -261,7 +261,7 @@ function EditTripModal({ modal, onClose, onSubmit, tripData, setTripData, invoic
 
 /* ─────────────────────────────────────────────
    PASSWORD RESET MODAL
-───────────────────────────────────────────── */
+──────────────────────────────────────────────── */
 function ResetPasswordModal({ modal, onClose, onSubmit, newPassword, setNewPassword, confirmPassword, setConfirmPassword, showNew, setShowNew, showConfirm, setShowConfirm }) {
   if (!modal.open) return null;
   return ReactDOM.createPortal(
@@ -301,7 +301,7 @@ function ResetPasswordModal({ modal, onClose, onSubmit, newPassword, setNewPassw
 
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
-───────────────────────────────────────────── */
+──────────────────────────────────────────────── */
 function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: parentFetchTrips }) {
   const { toasts, addToast, removeToast } = useToast();
 
@@ -689,6 +689,23 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
     return Object.entries(map).map(([name, d]) => ({ name, ...d })).sort((a, b) => b.total - a.total);
   }, [analyticsTrips]);
 
+  // ========== FIXED TOTAL KM COMPUTATION ==========
+  // Total km based on DISTANCE (Arrival Odometer - Departure Odometer)
+  const totalKm = useMemo(() => {
+    return currentTrips.reduce((sum, trip) => {
+      if (trip.departure_odometer && trip.arrival_odometer) {
+        const distance = trip.arrival_odometer - trip.departure_odometer;
+        return sum + (distance > 0 ? distance : 0);
+      }
+      return sum;
+    }, 0);
+  }, [currentTrips]);
+
+  // Count trips with valid distance
+  const tripsWithDistance = useMemo(() => {
+    return currentTrips.filter(t => t.departure_odometer && t.arrival_odometer).length;
+  }, [currentTrips]);
+
   const totalRevenue = analyticsData.amountTotals.reduce((a, b) => a + b, 0);
   const avgTripValue = analyticsTrips.length > 0 ? totalRevenue / analyticsTrips.length : 0;
 
@@ -865,11 +882,21 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
             { icon: <UsersIcon size={20} />, color: 'amber', value: currentDrivers.length, label: 'Total Drivers' },
             { icon: <TruckIcon size={20} />, color: 'indigo', value: currentTrips.length, label: 'Total Trips' },
             { icon: <CalendarIcon size={20} />, color: 'emerald', value: activeDatabase === 'main' ? currentTrips.filter(t => t.date === today()).length : 'N/A', label: 'Trips Today' },
-            { icon: <RouteIcon size={20} />, color: 'rose', value: currentTrips.reduce((s, t) => s + (parseFloat(t.odometer) || 0), 0).toLocaleString(), label: 'Total km' },
-          ].map(({ icon, color, value, label }) => (
+            { 
+              icon: <RouteIcon size={20} />, 
+              color: 'rose', 
+              value: totalKm.toLocaleString(), 
+              label: 'Total km (Distance)',
+              sub: `from ${tripsWithDistance} trip(s) with odometer records`
+            },
+          ].map(({ icon, color, value, label, sub }) => (
             <div key={label} className="ad-stat-card">
               <div className={`ad-stat-icon ${color}`}>{icon}</div>
-              <div><div className="ad-stat-value">{value}</div><div className="ad-stat-label">{label}</div></div>
+              <div>
+                <div className="ad-stat-value">{value}</div>
+                <div className="ad-stat-label">{label}</div>
+                {sub && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 4 }}>{sub}</div>}
+              </div>
             </div>
           ))}
         </div>
@@ -883,7 +910,7 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
           ))}
         </div>
 
-        {/* ── DRIVERS ── */}
+        {/* ── DRIVERS TAB ── */}
         {view === 'drivers' && (
           <div className="ad-card">
             <div className="ad-card-header">
@@ -936,7 +963,7 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
           </div>
         )}
 
-        {/* ── TRIPS TAB ── (UPDATED with odometer, distance, totals) */}
+        {/* ── TRIPS TAB ── */}
         {view === 'trips' && (
           <div className="ad-card">
             <div className="ad-card-header">
@@ -984,7 +1011,6 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
                         <th>Date</th><th>Driver</th><th>Helper</th><th>Dealer</th>
                         <th>Departure</th><th>Arrival</th><th>Unload End</th>
                         <th>Dep. ODO</th><th>Arr. ODO</th><th>Distance</th>
-
                         <th>Invoices</th><th>Checks</th>
                         <th>Total Inv</th><th>Total Chk</th>
                         <th>Location</th><th>Actions</th>
@@ -1021,7 +1047,7 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
           </div>
         )}
 
-        {/* ── ANALYTICS ── */}
+        {/* ── ANALYTICS TAB ── */}
         {view === 'analytics' && (
           <div className="ad-card">
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
