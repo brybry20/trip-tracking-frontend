@@ -300,6 +300,49 @@ function ResetPasswordModal({ modal, onClose, onSubmit, newPassword, setNewPassw
 }
 
 /* ─────────────────────────────────────────────
+   EDIT DRIVER MODAL
+──────────────────────────────────────────────── */
+function EditDriverModal({ modal, onClose, onSubmit, driverData, setDriverData, loading }) {
+  if (!modal.open) return null;
+  return ReactDOM.createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 999998, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'fadeIn 0.2s ease' }}>
+      <div style={{ background: '#fff', borderRadius: 18, padding: 'clamp(24px,5vw,36px) clamp(20px,5vw,32px)', maxWidth: 450, width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.25)', animation: 'modalIn 0.25s cubic-bezier(0.34,1.4,0.64,1)', fontFamily: "'DM Sans',sans-serif" }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>👤</div>
+          <div>
+            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 18, color: '#0f1117' }}>Edit Driver Profile</div>
+            <div style={{ fontSize: 13.5, color: '#6b7280', marginTop: 2 }}>Update information for {driverData.full_name}</div>
+          </div>
+        </div>
+
+        {[
+          { label: 'Full Name', key: 'full_name', ph: 'Enter full name' },
+          { label: 'Username', key: 'username', ph: 'Enter username' },
+          { label: 'Phone Number', key: 'phone', ph: 'Enter phone number' },
+          { label: 'Email Address', key: 'email', ph: 'Enter email address' },
+          { label: 'License Number', key: 'license_number', ph: 'Enter license number' },
+        ].map(({ label, key, ph }) => (
+          <div key={key} style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>{label}</label>
+            <input type="text" value={driverData[key]} onChange={e => setDriverData({ ...driverData, [key]: e.target.value })} placeholder={ph}
+              style={{ width: '100%', padding: '11px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14.5, outline: 'none', fontFamily: "'DM Sans',sans-serif" }}
+              onFocus={e => e.target.style.borderColor = '#3b82f6'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+          </div>
+        ))}
+
+        <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '13px', border: '1.5px solid #e5e7eb', borderRadius: 10, background: '#fff', color: '#374151', fontSize: 14.5, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>Cancel</button>
+          <button onClick={onSubmit} disabled={loading} style={{ flex: 1, padding: '13px', border: 'none', borderRadius: 10, background: '#0f1117', color: '#fff', fontSize: 14.5, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: "'DM Sans',sans-serif", opacity: loading ? 0.6 : 1 }}>
+            {loading ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* ─────────────────────────────────────────────
    MAIN COMPONENT
 ──────────────────────────────────────────────── */
 function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: parentFetchTrips }) {
@@ -342,6 +385,11 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Driver management
+  const [editDriverModal, setEditDriverModal] = useState({ open: false, driverId: null });
+  const [editDriverData, setEditDriverData] = useState({ full_name: '', phone: '', email: '', license_number: '', username: '' });
+  const [loadingUpdateDriver, setLoadingUpdateDriver] = useState(false);
 
   // Filters
   const [driverSearch, setDriverSearch] = useState('');
@@ -563,6 +611,61 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
       if (data.success) { addToast(`Password for ${resetPasswordModal.driverName} reset`, 'success', 'Done'); closeResetModal(); fetchDrivers(); }
       else { addToast(data.message || 'Failed', 'error', 'Error'); }
     } catch { addToast('Could not connect to server', 'error', 'Connection Error'); }
+  };
+
+  const openEditDriverModal = driver => {
+    setEditDriverData({
+      full_name: driver.full_name || '',
+      phone: driver.phone || '',
+      email: driver.email || '',
+      license_number: driver.license_number || '',
+      username: driver.username || ''
+    });
+    setEditDriverModal({ open: true, driverId: driver.id });
+  };
+
+  const handleUpdateDriver = async () => {
+    setLoadingUpdateDriver(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/drivers/${editDriverModal.driverId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editDriverData),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        addToast('Driver updated successfully!', 'success', 'Updated');
+        setEditDriverModal({ open: false, driverId: null });
+        fetchDrivers();
+      } else {
+        addToast(data.message || 'Failed to update driver', 'error', 'Update Failed');
+      }
+    } catch {
+      addToast('Could not connect to server', 'error', 'Connection Error');
+    } finally {
+      setLoadingUpdateDriver(false);
+    }
+  };
+
+  const handleDeleteDriver = async (driverId, driverName) => {
+    if (!window.confirm(`Are you sure you want to delete driver ${driverName} and their associated user account? This action cannot be undone.`)) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/auth/drivers/${driverId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        addToast('Driver deleted successfully', 'success', 'Deleted');
+        fetchDrivers();
+      } else {
+        addToast(data.message || 'Failed to delete driver', 'error', 'Delete Failed');
+      }
+    } catch {
+      addToast('Could not connect to server', 'error', 'Connection Error');
+    }
   };
 
   /* ── Derived data ── */
@@ -861,6 +964,9 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
         showNew={showNewPassword} setShowNew={setShowNewPassword}
         showConfirm={showConfirmPassword} setShowConfirm={setShowConfirmPassword} />
 
+      <EditDriverModal modal={editDriverModal} onClose={() => setEditDriverModal({ open: false, driverId: null })} 
+        onSubmit={handleUpdateDriver} driverData={editDriverData} setDriverData={setEditDriverData} loading={loadingUpdateDriver} />
+
       <div className="ad-root">
 
         {/* Permission banner */}
@@ -987,7 +1093,11 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
                           <td data-label="Phone">{driver.phone || '—'}</td>
                           <td data-label="License"><span className="ad-badge license">{driver.license_number || '—'}</span></td>
                           <td data-label="Actions">
-                            <button onClick={() => openResetPasswordModal(driver)} className="ad-edit-btn" style={{ background: '#fef3c7', color: '#92400e' }}>🔑 Reset Password</button>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button onClick={() => openEditDriverModal(driver)} className="ad-edit-btn" style={{ background: '#eff6ff', color: '#3b82f6' }}>✏️ Edit</button>
+                              <button onClick={() => openResetPasswordModal(driver)} className="ad-edit-btn" style={{ background: '#fef3c7', color: '#92400e' }}>🔑 PW</button>
+                              <button onClick={() => handleDeleteDriver(driver.id, driver.full_name)} className="ad-edit-btn" style={{ background: '#fee2e2', color: '#ef4444' }}>🗑️ Delete</button>
+                            </div>
                           </td>
                         </tr>
                       ))}
