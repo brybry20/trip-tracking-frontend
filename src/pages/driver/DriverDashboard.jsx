@@ -639,6 +639,26 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
     });
   };
 
+  const tableWrapRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - tableWrapRef.current.offsetLeft);
+    setScrollLeft(tableWrapRef.current.scrollLeft);
+  };
+  const handleMouseLeave = () => setIsDragging(false);
+  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - tableWrapRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    tableWrapRef.current.scrollLeft = scrollLeft - walk;
+  };
+
   // Derived data
   const tripsArray = Array.isArray(trips) ? trips : [];
   const myTrips = tripsArray.filter(t => t.driver_name === driverInfo?.full_name);
@@ -873,7 +893,8 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         .dd-results-count{padding:10px 20px;background:#f8fafc;border-bottom:1px solid #f3f4f6;font-size:13px;color:#6b7280}
 
         /* Table */
-        .dd-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+        .dd-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;cursor:grab;user-select:none}
+        .dd-table-wrap:active{cursor:grabbing}
         .dd-table{width:100%;border-collapse:collapse;font-size:14px}
         .dd-table thead tr{background:#f8fafc;border-bottom:1px solid #e5e7eb}
         .dd-table th{padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
@@ -1261,7 +1282,12 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
               {hasFilters ? 'No trips match your filters.' : 'No trips recorded yet. Log your first trip above.'}
             </div>
           ) : (
-            <div className="dd-table-wrap">
+            <div className="dd-table-wrap" ref={tableWrapRef}
+              onMouseDown={handleMouseDown}
+              onMouseLeave={handleMouseLeave}
+              onMouseUp={handleMouseUp}
+              onMouseMove={handleMouseMove}
+            >
               <table className="dd-table">
                 <thead>
                   <tr>

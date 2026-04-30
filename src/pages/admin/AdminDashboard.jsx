@@ -574,6 +574,26 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   const dealers = useMemo(() => [...new Set(currentTrips.map(t => t.dealer).filter(Boolean))], [currentTrips]);
   const availableYears = useMemo(() => [...new Set(currentTrips.map(t => t.date?.slice(0, 4)).filter(Boolean))].sort((a, b) => b - a), [currentTrips]);
 
+  const tableWrapRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - tableWrapRef.current.offsetLeft);
+    setScrollLeft(tableWrapRef.current.scrollLeft);
+  };
+  const handleMouseLeave = () => setIsDragging(false);
+  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - tableWrapRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    tableWrapRef.current.scrollLeft = scrollLeft - walk;
+  };
+
   const filteredDrivers = useMemo(() => {
     const q = driverSearch.toLowerCase();
     if (!q) return currentDrivers;
@@ -778,7 +798,8 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
         .ad-filter-label{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.6px}
         .ad-filter-tag{display:flex;align-items:center;gap:4px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#92400e;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:500}
         .ad-results-count{padding:9px 22px;background:#f8fafc;border-bottom:1px solid #f3f4f6;font-size:12.5px;color:#6b7280}
-        .ad-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+        .ad-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;cursor:grab;user-select:none}
+        .ad-table-wrap:active{cursor:grabbing}
         .ad-table-wrap::-webkit-scrollbar{height:4px}
         .ad-table-wrap::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:3px}
         .ad-table{width:100%;border-collapse:collapse;font-size:13.5px}
@@ -1018,7 +1039,12 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
             )}
             {loadingHistorical && activeDatabase === 'historical' ? <LoadingOverlay message="Loading 2025 trips…" /> :
               filteredTrips.length === 0 ? <div className="ad-empty"><div className="ad-empty-icon"><TruckIcon /></div>{hasTripFilters ? 'No trips match your filters.' : 'No trips in this database.'}</div> :
-                <div className="ad-table-wrap">
+                <div className="ad-table-wrap" ref={tableWrapRef}
+                  onMouseDown={handleMouseDown}
+                  onMouseLeave={handleMouseLeave}
+                  onMouseUp={handleMouseUp}
+                  onMouseMove={handleMouseMove}
+                >
                   <table className="ad-table">
                     <thead>
                       <tr>
