@@ -654,6 +654,18 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
       && (!filterDateTo || t.date <= filterDateTo);
   }), [myTrips, search, filterDealer, filterDateFrom, filterDateTo]);
 
+  const subTotals = useMemo(() => {
+    return filteredTrips.reduce((acc, trip) => {
+      const dist = (trip.arrival_odometer && trip.departure_odometer)
+        ? (trip.arrival_odometer - trip.departure_odometer)
+        : 0;
+      acc.distance += dist;
+      acc.invoices += (trip.total_invoices || 0);
+      acc.checks += (trip.total_checks || 0);
+      return acc;
+    }, { distance: 0, invoices: 0, checks: 0 });
+  }, [filteredTrips]);
+
   const hasFilters = search || filterDealer || filterDateFrom || filterDateTo;
   const clearFilters = () => { setSearch(''); setFilterDealer(''); setFilterDateFrom(''); setFilterDateTo(''); };
 
@@ -821,7 +833,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         .dd-section-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e5e7eb}
         .dd-section-title{font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;color:#0f1117;display:flex;align-items:center;gap:7px}
         .dd-section-body{padding:12px;background:#fff}
-        .dd-row-card{display:flex;align-items:center;gap:8px;padding:9px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:9px;margin-bottom:8px}
+        .dd-row-card{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:9px;margin-bottom:6px}
         .dd-row-card:last-of-type{margin-bottom:0}
         .dd-add-row-btn{display:flex;align-items:center;gap:5px;border:none;border-radius:7px;padding:7px 12px;font-size:12.5px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;-webkit-appearance:none}
         .dd-remove-row-btn{width:32px;height:32px;border:none;border-radius:6px;background:#fee2e2;color:#ef4444;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;-webkit-appearance:none}
@@ -872,6 +884,9 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         .dd-status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600}
         .dd-empty{padding:60px 20px;text-align:center;color:#9ca3af;font-size:15px}
         .dd-empty-icon{width:52px;height:52px;background:#f3f4f6;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#d1d5db}
+
+        .dd-table tfoot tr{background:#f8fafc;border-top:2px solid #e5e7eb;font-weight:700}
+        .dd-table tfoot td{padding:14px 16px;color:#0f1117;font-size:14px}
 
         /* Mobile Styles */
         @media(max-width:640px){
@@ -1323,16 +1338,24 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                         </td>
                         <td data-label="Invoices">
                           {trip.invoices?.length > 0
-                            ? <div style={{ fontSize: 13 }}>{trip.invoices.map((inv, i) => (
-                              <div key={i}>{inv.invoice_no}: <span style={{ color: '#d97706', fontWeight: 600 }}>₱{Number(inv.amount).toLocaleString()}</span></div>
-                            ))}</div>
+                            ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                {trip.invoices.map((inv, i) => (
+                                  <div key={i} style={{ fontSize: 11, background: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: 4, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                    {inv.invoice_no}: ₱{Number(inv.amount).toLocaleString()}
+                                  </div>
+                                ))}
+                              </div>
                             : <span style={{ color: '#d1d5db' }}>—</span>}
                         </td>
                         <td data-label="Checks">
                           {trip.checks?.length > 0
-                            ? <div style={{ fontSize: 13 }}>{trip.checks.map((chk, i) => (
-                              <div key={i}>{chk.check_no}: <span style={{ color: '#10b981', fontWeight: 600 }}>₱{Number(chk.amount).toLocaleString()}</span></div>
-                            ))}</div>
+                            ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                {trip.checks.map((chk, i) => (
+                                  <div key={i} style={{ fontSize: 11, background: '#d1fae5', color: '#065f46', padding: '2px 6px', borderRadius: 4, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                    {chk.check_no}: ₱{Number(chk.amount).toLocaleString()}
+                                  </div>
+                                ))}
+                              </div>
                             : <span style={{ color: '#d1d5db' }}>—</span>}
                         </td>
                         <td data-label="Total Invoices">
@@ -1363,6 +1386,20 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
                     );
                   })}
                 </tbody>
+                {filteredTrips.length > 0 && (
+                  <tfoot>
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'right', color: '#6b7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Sub Total</td>
+                      <td style={{ color: '#10b981', fontWeight: 800 }}>{subTotals.distance.toFixed(1)} km</td>
+                      <td colSpan="2"></td>
+                      <td></td>
+                      <td></td>
+                      <td style={{ color: '#d97706', fontWeight: 800, fontSize: 16 }}>₱{subTotals.invoices.toLocaleString()}</td>
+                      <td style={{ color: '#10b981', fontWeight: 800, fontSize: 16 }}>₱{subTotals.checks.toLocaleString()}</td>
+                      <td colSpan="2"></td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
           )}

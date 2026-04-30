@@ -232,14 +232,14 @@ function EditTripModal({ modal, onClose, onSubmit, tripData, setTripData, invoic
             </div>
             <div style={{ padding: 16 }}>
               {items.map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                   <input type="text" placeholder={keyPh} value={item[keyField]} onChange={e => update(idx, keyField, e.target.value)}
-                    style={{ flex: 2, padding: '9px 12px', border: '1.5px solid #e5e7eb', borderRadius: 8, fontSize: 13, fontFamily: "'DM Sans',sans-serif", outline: 'none' }}
+                    style={{ flex: 2, padding: '8px 12px', border: '1.5px solid #e5e7eb', borderRadius: 8, fontSize: 13, fontFamily: "'DM Sans',sans-serif", outline: 'none' }}
                     onFocus={e => e.target.style.borderColor = '#f59e0b'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
                   <input type="number" placeholder="Amount (₱)" value={item.amount} onChange={e => update(idx, 'amount', e.target.value)}
-                    style={{ flex: 1, padding: '9px 12px', border: '1.5px solid #e5e7eb', borderRadius: 8, fontSize: 13, fontFamily: "'DM Sans',sans-serif", outline: 'none' }}
+                    style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #e5e7eb', borderRadius: 8, fontSize: 13, fontFamily: "'DM Sans',sans-serif", outline: 'none' }}
                     onFocus={e => e.target.style.borderColor = '#f59e0b'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
-                  {items.length > 1 && <button onClick={() => remove(idx)} style={{ background: '#fee2e2', border: 'none', padding: '9px 14px', borderRadius: 8, cursor: 'pointer', color: '#ef4444', fontWeight: 600, fontSize: 14 }}>×</button>}
+                  {items.length > 1 && <button onClick={() => remove(idx)} style={{ background: '#fee2e2', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer', color: '#ef4444', fontWeight: 600, fontSize: 14 }}>×</button>}
                 </div>
               ))}
               <div style={{ fontSize: 11, color: '#9ca3af', fontStyle: 'italic', marginTop: 8 }}>Leave blank if none for this trip.</div>
@@ -589,6 +589,18 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
       && (!filterDateTo || t.date <= filterDateTo);
   }), [currentTrips, tripSearch, filterDriver, filterDealer, filterDateFrom, filterDateTo]);
 
+  const subTotals = useMemo(() => {
+    return filteredTrips.reduce((acc, trip) => {
+      const dist = (trip.arrival_odometer && trip.departure_odometer)
+        ? (trip.arrival_odometer - trip.departure_odometer)
+        : 0;
+      acc.distance += dist;
+      acc.invoices += (trip.total_invoices || 0);
+      acc.checks += (trip.total_checks || 0);
+      return acc;
+    }, { distance: 0, invoices: 0, checks: 0 });
+  }, [filteredTrips]);
+
   const hasDriverFilters = !!driverSearch;
   const hasTripFilters = !!(tripSearch || filterDriver || filterDealer || filterDateFrom || filterDateTo);
   const clearDriverFilters = () => setDriverSearch('');
@@ -789,6 +801,8 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
         .ad-edit-btn:hover{background:#dbeafe}
         .ad-empty{padding:60px 20px;text-align:center;color:#9ca3af;font-size:14px}
         .ad-empty-icon{width:50px;height:50px;background:#f3f4f6;border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#d1d5db}
+        .ad-table tfoot tr{background:#f8fafc;border-top:2px solid #e5e7eb;font-weight:700}
+        .ad-table tfoot td{padding:13px 16px;color:#0f1117;font-size:13.5px}
         .an-kpi-label{font-size:11.5px;color:#6b7280;margin-bottom:9px}
         .an-kpi-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#0f1117}
         @media(max-width:640px){
@@ -1031,8 +1045,8 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
                             <td data-label="Dep. ODO">{trip.departure_odometer ? `${trip.departure_odometer} km` : '—'}</td>
                             <td data-label="Arr. ODO">{trip.arrival_odometer ? `${trip.arrival_odometer} km` : '—'}</td>
                             <td data-label="Distance">{distance ? <span style={{ color: '#10b981', fontWeight: 700 }}>{distance} km</span> : '—'}</td>
-                            <td data-label="Invoices">{trip.invoices?.length > 0 ? <div>{trip.invoices.map((inv, i) => <span key={i} className="ad-invoice-badge">{inv.invoice_no}: ₱{Number(inv.amount).toLocaleString()}</span>)}</div> : '—'}</td>
-                            <td data-label="Checks">{trip.checks?.length > 0 ? <div>{trip.checks.map((chk, i) => <span key={i} className="ad-check-badge">{chk.check_no}: ₱{Number(chk.amount).toLocaleString()}</span>)}</div> : '—'}</td>
+                            <td data-label="Invoices">{trip.invoices?.length > 0 ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>{trip.invoices.map((inv, i) => <span key={i} className="ad-invoice-badge" style={{ margin: 0 }}>{inv.invoice_no}: ₱{Number(inv.amount).toLocaleString()}</span>)}</div> : '—'}</td>
+                            <td data-label="Checks">{trip.checks?.length > 0 ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>{trip.checks.map((chk, i) => <span key={i} className="ad-check-badge" style={{ margin: 0 }}>{chk.check_no}: ₱{Number(chk.amount).toLocaleString()}</span>)}</div> : '—'}</td>
                             <td data-label="Total Inv"><span style={{ color: '#d97706', fontWeight: 700 }}>₱{(trip.total_invoices || 0).toLocaleString()}</span></td>
                             <td data-label="Total Chk"><span style={{ color: '#10b981', fontWeight: 700 }}>₱{(trip.total_checks || 0).toLocaleString()}</span></td>
                             <td data-label="Location">{trip.location_lat && trip.location_lng ? <a href={`https://www.google.com/maps?q=${trip.location_lat},${trip.location_lng}`} target="_blank" rel="noopener noreferrer" className="ad-map-link">📍 View Map</a> : '—'}</td>
@@ -1041,6 +1055,17 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
                         );
                       })}
                     </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan="9" style={{ textAlign: 'right', color: '#6b7280', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Sub Total</td>
+                        <td style={{ color: '#10b981', fontWeight: 800 }}>{subTotals.distance.toFixed(1)} km</td>
+                        <td></td>
+                        <td></td>
+                        <td style={{ color: '#d97706', fontWeight: 800 }}>₱{subTotals.invoices.toLocaleString()}</td>
+                        <td style={{ color: '#10b981', fontWeight: 800 }}>₱{subTotals.checks.toLocaleString()}</td>
+                        <td colSpan="2"></td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
             }
