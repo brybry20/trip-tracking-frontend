@@ -30,22 +30,32 @@ function SplashScreen({ status }) {
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState('Initializing application...');
+  const [status, setStatus] = useState('Connecting to server...');
 
   useEffect(() => {
     const checkAuth = async () => {
       const storedToken = localStorage.getItem(TOKEN_KEY);
       const storedUser = localStorage.getItem(USER_KEY);
 
-      // Timeout helper to update status if server is slow (Render cold start)
-      const statusTimeout = setTimeout(() => {
-        setStatus('Waking up server... please wait (this may take a minute)');
-      }, 3500);
+      // ── STEP 1: Pre-warm the server with a fast /health ping ──
+      // This starts waking up Render's server immediately while the splash screen shows.
+      setStatus('Waking up server...');
+      try {
+        await fetch(`${API_URL}/health`, { method: 'GET', cache: 'no-store' });
+        setStatus('Server is awake! Verifying session...');
+      } catch {
+        // Server might still be cold-starting, give it more time
+        setStatus('Server is starting up, please wait...');
+        await new Promise(r => setTimeout(r, 5000));
+        try {
+          await fetch(`${API_URL}/health`, { method: 'GET', cache: 'no-store' });
+          setStatus('Connected! Verifying session...');
+        } catch {
+          setStatus('Connection slow, continuing anyway...');
+        }
+      }
 
-      const statusTimeout2 = setTimeout(() => {
-        setStatus('Almost there... establishing secure connection');
-      }, 10000);
-
+      // ── STEP 2: Do the actual auth check ──
       try {
         if (storedToken && storedUser) {
           setStatus('Verifying credentials...');
@@ -85,16 +95,23 @@ function App() {
         }
       } catch (err) {
         console.error('Auth verification failed:', err);
-        setStatus('Connection error. Retrying...');
+        setStatus('Session check failed. Redirecting to login...');
       } finally {
-        clearTimeout(statusTimeout);
-        clearTimeout(statusTimeout2);
-        // Add a slight delay for smooth transition
-        setTimeout(() => setLoading(false), 800);
+        // Smooth transition out of splash screen
+        setTimeout(() => setLoading(false), 600);
       }
     };
 
     checkAuth();
+
+    // ── STEP 3: Keep-alive ping every 14 minutes ──
+    // Render free tier sleeps after 15 min of inactivity.
+    // Pinging every 14 min prevents it from sleeping during the user's session.
+    const keepAlive = setInterval(() => {
+      fetch(`${API_URL}/health`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+    }, 14 * 60 * 1000);
+
+    return () => clearInterval(keepAlive);
   }, []);
 
   if (loading) return <SplashScreen status={status} />;
