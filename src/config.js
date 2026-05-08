@@ -1,6 +1,6 @@
 // frontend/src/config.js
 
-const PROD_API_URL = 'https://trip-tracking-backend-egfp.onrender.com';
+const PROD_API_URL = 'https://trip-tracking-backend.onrender.com/';
 // const LOCAL_API_URL = 'http://localhost:5000';
 
 // Auto-select based on environment
