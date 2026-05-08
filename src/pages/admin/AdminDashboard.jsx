@@ -508,7 +508,7 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
     intervalRef.current = setInterval(() => {
       if (activeDatabase === 'main') fetchMainTrips();
       else fetchHistoricalData();
-    }, 1000);
+    }, 5000);
     return () => clearInterval(intervalRef.current);
   }, [autoRefreshEnabled, activeDatabase, fetchMainTrips]);
 
