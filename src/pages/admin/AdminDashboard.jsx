@@ -5,8 +5,6 @@ import API_URL from '../../config';
 /* ─────────────────────────────────────────────
    GLOBAL STYLES
 ──────────────────────────────────────────────── */
-import logo from '../../assets/deltaplus.png';
-
 const AD_STYLE_ID = 'ad-global-keyframes';
 if (typeof document !== 'undefined' && !document.getElementById(AD_STYLE_ID)) {
   const s = document.createElement('style');
@@ -21,95 +19,6 @@ if (typeof document !== 'undefined' && !document.getElementById(AD_STYLE_ID)) {
   `;
   document.head.appendChild(s);
 }
-
-const ADMIN_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
-  *{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
-  .ad-root{font-family:'DM Sans',sans-serif}
-  .ad-db-switcher{display:flex;align-items:center;gap:10px;margin-bottom:16px;background:#fff;padding:14px 18px;border-radius:14px;border:1px solid #e5e7eb;flex-wrap:wrap}
-  .ad-db-label{font-size:11.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;flex-shrink:0}
-  .ad-db-buttons{display:flex;gap:6px;flex-wrap:wrap}
-  .ad-db-btn{display:flex;align-items:center;gap:7px;padding:8px 16px;border:1.5px solid #e5e7eb;border-radius:9px;background:#fff;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .2s;font-family:'Syne',sans-serif}
-  .ad-db-btn:hover:not(.active){border-color:#d1d5db;background:#f9fafb;color:#374151}
-  .ad-db-btn.active{background:#0f1117;color:#fff;border-color:#0f1117;box-shadow:0 2px 8px rgba(0,0,0,.18)}
-  .ad-db-btn.active .ad-db-badge{background:#f59e0b;color:#0f1117}
-  .ad-db-badge{background:#f3f4f6;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700}
-  .ad-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-  .ad-stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:14px;transition:box-shadow .2s,transform .2s}
-  .ad-stat-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.07);transform:translateY(-1px)}
-  .ad-stat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
-  .ad-stat-icon.amber{background:linear-gradient(135deg,#f59e0b,#d97706)}
-  .ad-stat-icon.indigo{background:linear-gradient(135deg,#6366f1,#4f46e5)}
-  .ad-stat-icon.emerald{background:linear-gradient(135deg,#10b981,#059669)}
-  .ad-stat-icon.rose{background:linear-gradient(135deg,#f43f5e,#e11d48)}
-  .ad-stat-value{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#0f1117;letter-spacing:-.5px;line-height:1;margin-bottom:4px}
-  .ad-stat-label{font-size:11px;color:#9ca3af;font-weight:500;text-transform:uppercase;letter-spacing:.6px}
-  .ad-tabs{display:flex;gap:3px;background:#f3f4f6;border-radius:10px;padding:4px;margin-bottom:16px;overflow-x:auto}
-  .ad-tabs::-webkit-scrollbar{display:none}
-  .ad-tab{display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:7px;border:none;background:transparent;color:#6b7280;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .18s;white-space:nowrap;flex-shrink:0}
-  .ad-tab.active{background:#0f1117;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
-  .ad-tab-count{background:rgba(245,158,11,.15);color:#f59e0b;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px}
-  .ad-tab.active .ad-tab-count{background:rgba(245,158,11,.25)}
-  .ad-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
-  .ad-card-header{padding:18px 22px;border-bottom:1px solid #f3f4f6;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
-  .ad-card-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#0f1117;letter-spacing:-.2px}
-  .ad-card-sub{font-size:12.5px;color:#9ca3af;margin-top:3px}
-  .ad-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-  .ad-search-wrap{position:relative;display:flex;align-items:center;flex:1;min-width:160px}
-  .ad-search-icon{position:absolute;left:10px;color:#9ca3af;pointer-events:none;display:flex;align-items:center}
-  .ad-search{padding:9px 13px 9px 32px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:#111827;background:#f9fafb;outline:none;width:100%}
-  .ad-search:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.08);background:#fff}
-  .ad-select,.ad-date-input{padding:9px 11px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:#374151;background:#f9fafb;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none}
-  .ad-select{padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
-  .ad-select:focus,.ad-date-input:focus{border-color:#f59e0b}
-  .ad-export-btn{display:flex;align-items:center;gap:6px;background:#0f1117;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:#fff;cursor:pointer;white-space:nowrap}
-  .ad-refresh-btn{display:flex;align-items:center;gap:6px;background:#f3f4f6;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:#4b5563;cursor:pointer;white-space:nowrap}
-  .ad-clear-btn{display:flex;align-items:center;gap:5px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:#ef4444;cursor:pointer;white-space:nowrap}
-  .ad-toggle-btn{display:flex;align-items:center;gap:6px;border:none;border-radius:8px;padding:9px 13px;font-size:12.5px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s}
-  .ad-filter-bar{padding:11px 22px;background:#fafafa;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .ad-filter-label{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.6px}
-  .ad-filter-tag{display:flex;align-items:center;gap:4px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#92400e;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:500}
-  .ad-results-count{padding:9px 22px;background:#f8fafc;border-bottom:1px solid #f3f4f6;font-size:12.5px;color:#6b7280}
-  .ad-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;cursor:grab;user-select:none}
-  .ad-table-wrap:active{cursor:grabbing}
-  .ad-table-wrap::-webkit-scrollbar{height:4px}
-  .ad-table-wrap::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:3px}
-  .ad-table{width:100%;border-collapse:collapse;font-size:13.5px}
-  .ad-table thead tr{background:#f8fafc;border-bottom:1px solid #e5e7eb}
-  .ad-table th{padding:12px 16px;text-align:left;font-size:10.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
-  .ad-table td{padding:13px 16px;color:#374151;border-bottom:1px solid #f3f4f6;white-space:nowrap}
-  .ad-table tbody tr:last-child td{border-bottom:none}
-  .ad-table tbody tr:hover{background:#fffbf0}
-  .ad-driver-cell{display:flex;align-items:center;gap:10px}
-  .ad-driver-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:#0f1117;flex-shrink:0}
-  .ad-driver-name{font-weight:600;color:#111827;font-size:13.5px}
-  .ad-driver-user{font-size:11.5px;color:#9ca3af;margin-top:2px}
-  .ad-badge{display:inline-flex;align-items:center;padding:3px 11px;border-radius:20px;font-size:12px;font-weight:500}
-  .ad-badge.license{background:#eff6ff;color:#3b82f6}
-  .ad-invoice-badge{display:inline-block;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:6px;font-size:11.5px;font-weight:600;margin:2px}
-  .ad-check-badge{display:inline-block;padding:2px 8px;background:#d1fae5;color:#065f46;border-radius:6px;font-size:11.5px;font-weight:600;margin:2px}
-  .ad-map-link{color:#3b82f6;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#eff6ff;border-radius:6px;font-size:12px;font-weight:500}
-  .ad-map-link:hover{background:#dbeafe}
-  .ad-edit-btn{background:#eff6ff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;color:#3b82f6;cursor:pointer;transition:all .18s}
-  .ad-edit-btn:hover{background:#dbeafe}
-  .ad-empty{padding:60px 20px;text-align:center;color:#9ca3af;font-size:14px}
-  .ad-empty-icon{width:50px;height:50px;background:#f3f4f6;border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#d1d5db}
-  .ad-table tfoot tr{background:#f8fafc;border-top:2px solid #e5e7eb;font-weight:700}
-  .ad-table tfoot td{padding:13px 16px;color:#0f1117;font-size:13.5px}
-  .an-kpi-label{font-size:11.5px;color:#6b7280;margin-bottom:9px}
-  .an-kpi-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#0f1117}
-  @media(max-width:640px){
-    .ad-stats{grid-template-columns:1fr 1fr;gap:8px}
-    .ad-stat-card{padding:12px 14px}
-    .ad-stat-icon{width:36px;height:36px}
-    .ad-stat-value{font-size:20px}
-    .ad-table thead{display:none}
-    .ad-table tbody tr{display:block;margin-bottom:12px;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
-    .ad-table td{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border:none;white-space:normal}
-    .ad-table td::before{content:attr(data-label);font-weight:600;color:#6b7280;margin-right:12px;font-size:12px}
-    .ad-driver-cell{flex:1}
-  }
-`;
 
 /* ─────────────────────────────────────────────
    SOUND HELPER
@@ -441,14 +350,14 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
 
   const [view, setView] = useState('drivers');
   const [activeDatabase, setActiveDatabase] = useState('main');
-  const [drivers, setDrivers] = useState(Array.isArray(propDrivers) ? propDrivers : []);
   const [historicalTrips, setHistoricalTrips] = useState([]);
   const [historicalDrivers, setHistoricalDrivers] = useState([]);
   const [loadingHistorical, setLoadingHistorical] = useState(false);
+  const [drivers, setDrivers] = useState([]);
   const [loadingUpdate, setLoadingUpdate] = useState(false);
 
   // ── INTERNAL TRIPS STATE ────────────────────────────────────────────────
-  const [mainTrips, setMainTrips] = useState(Array.isArray(propTrips) ? propTrips : []);
+  const [mainTrips, setMainTrips] = useState(propTrips || []);
 
   // Snapshot of the previous poll for diff comparison
   const prevTripsRef = useRef(null);
@@ -587,8 +496,8 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
       runNotificationDiff(fresh);
       setMainTrips(fresh);
       if (typeof parentFetchTrips === 'function') parentFetchTrips();
-    } catch {
-      // silent
+    } catch (err) {
+      console.error('Fetch trips failed:', err);
     }
   }, [runNotificationDiff, parentFetchTrips]);
 
@@ -618,15 +527,16 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   }, []);
 
   const fetchDrivers = async () => {
-    // Now using parent-provided drivers or fetching from the correct endpoint if needed.
-    // For now, we'll fetch from /auth/drivers to ensure correct IDs for editing.
     try {
       const res = await fetch(`${API_URL}/auth/drivers`, { credentials: 'include' });
       const data = await res.json();
-      if (Array.isArray(data)) setDrivers(data);
-      else if (data.error) addToast(data.error, 'error', 'Error');
-    } catch { 
-      addToast('Failed to load drivers', 'error', 'Connection Error'); 
+      if (Array.isArray(data)) {
+        setDrivers(data);
+      } else if (data.error) {
+        addToast(data.error, 'error', 'Error');
+      }
+    } catch {
+      addToast('Failed to load drivers', 'error', 'Connection Error');
     }
   };
 
@@ -732,11 +642,12 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
       if (data.success) {
         addToast('Driver updated successfully!', 'success', 'Updated');
         setEditDriverModal({ open: false, driverId: null });
-        fetchDrivers();
+        fetchDrivers(); // Refresh with new data
       } else {
         addToast(data.message || 'Failed to update driver', 'error', 'Update Failed');
       }
-    } catch {
+    } catch (err) {
+      console.error('Update driver failed:', err);
       addToast('Could not connect to server', 'error', 'Connection Error');
     } finally {
       setLoadingUpdateDriver(false);
@@ -768,20 +679,9 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   const currentTrips = activeDatabase === 'main' ? mainTrips : historicalTrips;
   const today = () => new Date().toISOString().split('T')[0];
 
-  const driverNames = useMemo(() => {
-    if (!Array.isArray(currentTrips)) return [];
-    return [...new Set(currentTrips.map(t => t.driver_name).filter(Boolean))];
-  }, [currentTrips]);
-
-  const dealers = useMemo(() => {
-    if (!Array.isArray(currentTrips)) return [];
-    return [...new Set(currentTrips.map(t => t.dealer).filter(Boolean))];
-  }, [currentTrips]);
-
-  const availableYears = useMemo(() => {
-    if (!Array.isArray(currentTrips)) return [];
-    return [...new Set(currentTrips.map(t => t.date?.slice(0, 4)).filter(Boolean))].sort((a, b) => b - a);
-  }, [currentTrips]);
+  const driverNames = useMemo(() => [...new Set(currentTrips.map(t => t.driver_name).filter(Boolean))], [currentTrips]);
+  const dealers = useMemo(() => [...new Set(currentTrips.map(t => t.dealer).filter(Boolean))], [currentTrips]);
+  const availableYears = useMemo(() => [...new Set(currentTrips.map(t => t.date?.slice(0, 4)).filter(Boolean))].sort((a, b) => b - a), [currentTrips]);
 
   const tableWrapRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -804,23 +704,19 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   };
 
   const filteredDrivers = useMemo(() => {
-    if (!Array.isArray(currentDrivers)) return [];
     const q = driverSearch.toLowerCase();
     if (!q) return currentDrivers;
     return currentDrivers.filter(d => [d.full_name, d.username, d.email, d.phone, d.license_number].some(v => v?.toLowerCase().includes(q)));
   }, [currentDrivers, driverSearch]);
 
-  const filteredTrips = useMemo(() => {
-    if (!Array.isArray(currentTrips)) return [];
-    return currentTrips.filter(t => {
-      const q = tripSearch.toLowerCase();
-      return (!q || [t.driver_name, t.helper, t.dealer, t.date].some(v => v?.toLowerCase().includes(q)))
-        && (!filterDriver || t.driver_name === filterDriver)
-        && (!filterDealer || t.dealer === filterDealer)
-        && (!filterDateFrom || t.date >= filterDateFrom)
-        && (!filterDateTo || t.date <= filterDateTo);
-    });
-  }, [currentTrips, tripSearch, filterDriver, filterDealer, filterDateFrom, filterDateTo]);
+  const filteredTrips = useMemo(() => currentTrips.filter(t => {
+    const q = tripSearch.toLowerCase();
+    return (!q || [t.driver_name, t.helper, t.dealer, t.date].some(v => v?.toLowerCase().includes(q)))
+      && (!filterDriver || t.driver_name === filterDriver)
+      && (!filterDealer || t.dealer === filterDealer)
+      && (!filterDateFrom || t.date >= filterDateFrom)
+      && (!filterDateTo || t.date <= filterDateTo);
+  }), [currentTrips, tripSearch, filterDriver, filterDealer, filterDateFrom, filterDateTo]);
 
   const subTotals = useMemo(() => {
     return filteredTrips.reduce((acc, trip) => {
@@ -963,7 +859,94 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   /* ── RENDER ── */
   return (
     <>
-      <style>{ADMIN_STYLES}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+        *{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
+        .ad-root{font-family:'DM Sans',sans-serif}
+        .ad-db-switcher{display:flex;align-items:center;gap:10px;margin-bottom:16px;background:#fff;padding:14px 18px;border-radius:14px;border:1px solid #e5e7eb;flex-wrap:wrap}
+        .ad-db-label{font-size:11.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;flex-shrink:0}
+        .ad-db-buttons{display:flex;gap:6px;flex-wrap:wrap}
+        .ad-db-btn{display:flex;align-items:center;gap:7px;padding:8px 16px;border:1.5px solid #e5e7eb;border-radius:9px;background:#fff;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .2s;font-family:'Syne',sans-serif}
+        .ad-db-btn:hover:not(.active){border-color:#d1d5db;background:#f9fafb;color:#374151}
+        .ad-db-btn.active{background:#0f1117;color:#fff;border-color:#0f1117;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+        .ad-db-btn.active .ad-db-badge{background:#f59e0b;color:#0f1117}
+        .ad-db-badge{background:#f3f4f6;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700}
+        .ad-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+        .ad-stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:14px;transition:box-shadow .2s,transform .2s}
+        .ad-stat-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.07);transform:translateY(-1px)}
+        .ad-stat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+        .ad-stat-icon.amber{background:linear-gradient(135deg,#f59e0b,#d97706)}
+        .ad-stat-icon.indigo{background:linear-gradient(135deg,#6366f1,#4f46e5)}
+        .ad-stat-icon.emerald{background:linear-gradient(135deg,#10b981,#059669)}
+        .ad-stat-icon.rose{background:linear-gradient(135deg,#f43f5e,#e11d48)}
+        .ad-stat-value{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#0f1117;letter-spacing:-.5px;line-height:1;margin-bottom:4px}
+        .ad-stat-label{font-size:11px;color:#9ca3af;font-weight:500;text-transform:uppercase;letter-spacing:.6px}
+        .ad-tabs{display:flex;gap:3px;background:#f3f4f6;border-radius:10px;padding:4px;margin-bottom:16px;overflow-x:auto}
+        .ad-tabs::-webkit-scrollbar{display:none}
+        .ad-tab{display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:7px;border:none;background:transparent;color:#6b7280;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .18s;white-space:nowrap;flex-shrink:0}
+        .ad-tab.active{background:#0f1117;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+        .ad-tab-count{background:rgba(245,158,11,.15);color:#f59e0b;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px}
+        .ad-tab.active .ad-tab-count{background:rgba(245,158,11,.25)}
+        .ad-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
+        .ad-card-header{padding:18px 22px;border-bottom:1px solid #f3f4f6;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+        .ad-card-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#0f1117;letter-spacing:-.2px}
+        .ad-card-sub{font-size:12.5px;color:#9ca3af;margin-top:3px}
+        .ad-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+        .ad-search-wrap{position:relative;display:flex;align-items:center;flex:1;min-width:160px}
+        .ad-search-icon{position:absolute;left:10px;color:#9ca3af;pointer-events:none;display:flex;align-items:center}
+        .ad-search{padding:9px 13px 9px 32px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:#111827;background:#f9fafb;outline:none;width:100%}
+        .ad-search:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.08);background:#fff}
+        .ad-select,.ad-date-input{padding:9px 11px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:#374151;background:#f9fafb;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none}
+        .ad-select{padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
+        .ad-select:focus,.ad-date-input:focus{border-color:#f59e0b}
+        .ad-export-btn{display:flex;align-items:center;gap:6px;background:#0f1117;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:#fff;cursor:pointer;white-space:nowrap}
+        .ad-refresh-btn{display:flex;align-items:center;gap:6px;background:#f3f4f6;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:#4b5563;cursor:pointer;white-space:nowrap}
+        .ad-clear-btn{display:flex;align-items:center;gap:5px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:#ef4444;cursor:pointer;white-space:nowrap}
+        .ad-toggle-btn{display:flex;align-items:center;gap:6px;border:none;border-radius:8px;padding:9px 13px;font-size:12.5px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s}
+        .ad-filter-bar{padding:11px 22px;background:#fafafa;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .ad-filter-label{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.6px}
+        .ad-filter-tag{display:flex;align-items:center;gap:4px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#92400e;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:500}
+        .ad-results-count{padding:9px 22px;background:#f8fafc;border-bottom:1px solid #f3f4f6;font-size:12.5px;color:#6b7280}
+        .ad-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;cursor:grab;user-select:none}
+        .ad-table-wrap:active{cursor:grabbing}
+        .ad-table-wrap::-webkit-scrollbar{height:4px}
+        .ad-table-wrap::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:3px}
+        .ad-table{width:100%;border-collapse:collapse;font-size:13.5px}
+        .ad-table thead tr{background:#f8fafc;border-bottom:1px solid #e5e7eb}
+        .ad-table th{padding:12px 16px;text-align:left;font-size:10.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
+        .ad-table td{padding:13px 16px;color:#374151;border-bottom:1px solid #f3f4f6;white-space:nowrap}
+        .ad-table tbody tr:last-child td{border-bottom:none}
+        .ad-table tbody tr:hover{background:#fffbf0}
+        .ad-driver-cell{display:flex;align-items:center;gap:10px}
+        .ad-driver-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:#0f1117;flex-shrink:0}
+        .ad-driver-name{font-weight:600;color:#111827;font-size:13.5px}
+        .ad-driver-user{font-size:11.5px;color:#9ca3af;margin-top:2px}
+        .ad-badge{display:inline-flex;align-items:center;padding:3px 11px;border-radius:20px;font-size:12px;font-weight:500}
+        .ad-badge.license{background:#eff6ff;color:#3b82f6}
+        .ad-invoice-badge{display:inline-block;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:6px;font-size:11.5px;font-weight:600;margin:2px}
+        .ad-check-badge{display:inline-block;padding:2px 8px;background:#d1fae5;color:#065f46;border-radius:6px;font-size:11.5px;font-weight:600;margin:2px}
+        .ad-map-link{color:#3b82f6;text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#eff6ff;border-radius:6px;font-size:12px;font-weight:500}
+        .ad-map-link:hover{background:#dbeafe}
+        .ad-edit-btn{background:#eff6ff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;color:#3b82f6;cursor:pointer;transition:all .18s}
+        .ad-edit-btn:hover{background:#dbeafe}
+        .ad-empty{padding:60px 20px;text-align:center;color:#9ca3af;font-size:14px}
+        .ad-empty-icon{width:50px;height:50px;background:#f3f4f6;border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#d1d5db}
+        .ad-table tfoot tr{background:#f8fafc;border-top:2px solid #e5e7eb;font-weight:700}
+        .ad-table tfoot td{padding:13px 16px;color:#0f1117;font-size:13.5px}
+        .an-kpi-label{font-size:11.5px;color:#6b7280;margin-bottom:9px}
+        .an-kpi-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#0f1117}
+        @media(max-width:640px){
+          .ad-stats{grid-template-columns:1fr 1fr;gap:8px}
+          .ad-stat-card{padding:12px 14px}
+          .ad-stat-icon{width:36px;height:36px}
+          .ad-stat-value{font-size:20px}
+          .ad-table thead{display:none}
+          .ad-table tbody tr{display:block;margin-bottom:12px;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+          .ad-table td{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border:none;white-space:normal}
+          .ad-table td::before{content:attr(data-label);font-weight:600;color:#6b7280;margin-right:12px;font-size:12px}
+          .ad-driver-cell{flex:1}
+        }
+      `}</style>
 
       <Toast toasts={toasts} removeToast={removeToast} />
 
