@@ -157,118 +157,6 @@ function LoadingOverlay({ message = 'Loading…' }) {
 }
 
 /* ─────────────────────────────────────────────
-   CREATE TRIP MODAL
-──────────────────────────────────────────────── */
-function CreateTripModal({ modal, onClose, onSubmit, tripData, setTripData, drivers, loading }) {
-  if (!modal.open) return null;
-
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => setTripData({ ...tripData, latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-        () => alert('Failed to get location')
-      );
-    }
-  };
-
-  return ReactDOM.createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 999998, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'fadeIn 0.2s ease' }}>
-      <div style={{ background: '#fff', borderRadius: 18, padding: 'clamp(24px,5vw,36px) clamp(20px,5vw,32px)', maxWidth: 650, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.25)', animation: 'modalIn 0.25s cubic-bezier(0.34,1.4,0.64,1)', fontFamily: "'DM Sans',sans-serif" }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 12, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🚚</div>
-          <div>
-            <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 18, color: '#0f1117' }}>Create Manual Trip</div>
-            <div style={{ fontSize: 13.5, color: '#6b7280', marginTop: 2 }}>Log a trip for any driver at any time</div>
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Driver</label>
-          <select value={tripData.driver_id} onChange={e => setTripData({ ...tripData, driver_id: e.target.value })}
-            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, outline: 'none', background: '#f9fafb', cursor: 'pointer' }}>
-            <option value="">Select a driver...</option>
-            {drivers.map(d => <option key={d.id} value={d.id}>{d.full_name} (@{d.username})</option>)}
-          </select>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Date</label>
-            <input type="date" value={tripData.date} onChange={e => setTripData({ ...tripData, date: e.target.value })}
-              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, outline: 'none' }} />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Helper(s)</label>
-            <input type="text" value={tripData.helper} onChange={e => setTripData({ ...tripData, helper: e.target.value })} placeholder="e.g. Juan, Pedro"
-              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, outline: 'none' }} />
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Dealer / Destination</label>
-          <input type="text" value={tripData.dealer} onChange={e => setTripData({ ...tripData, dealer: e.target.value })} placeholder="Enter dealer name"
-            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, outline: 'none' }} />
-        </div>
-
-        <div style={{ background: '#f8fafc', borderRadius: 14, padding: 18, marginBottom: 24, border: '1px solid #e5e7eb' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 16 }}>⏱️ TRIP TIMELINE</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
-            {[
-              { label: 'Departure Time', key: 'time_departure' },
-              { label: 'Arrival Time', key: 'time_arrival' },
-              { label: 'Unload End', key: 'time_unload_end' }
-            ].map(f => (
-              <div key={f.key}>
-                <label style={{ display: 'block', fontSize: 11, color: '#6b7280', marginBottom: 6, fontWeight: 500 }}>{f.label}</label>
-                <input type="time" value={tripData[f.key]} onChange={e => setTripData({ ...tripData, [f.key]: e.target.value })}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13, outline: 'none' }} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ background: '#fdfbf7', borderRadius: 14, padding: 18, marginBottom: 24, border: '1px solid #fef3c7' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#b45309', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 16 }}>📊 ODOMETER RECORDS</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            {[
-              { label: 'Departure (km)', key: 'departure_odometer' },
-              { label: 'Arrival (km)', key: 'arrival_odometer' }
-            ].map(f => (
-              <div key={f.key}>
-                <label style={{ display: 'block', fontSize: 11, color: '#92400e', marginBottom: 6, fontWeight: 500 }}>{f.label}</label>
-                <input type="number" value={tripData[f.key]} onChange={e => setTripData({ ...tripData, [f.key]: e.target.value })} placeholder="0"
-                  style={{ width: '100%', padding: '10px 14px', border: '1px solid #fcd34d', borderRadius: 10, fontSize: 14, outline: 'none', background: '#fff' }} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>📍 Pin Location (Coordinates)</label>
-            <button onClick={getCurrentLocation} style={{ background: '#eff6ff', border: 'none', color: '#3b82f6', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, cursor: 'pointer' }}>Use My Location</button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <input type="number" step="any" value={tripData.latitude} onChange={e => setTripData({ ...tripData, latitude: e.target.value })} placeholder="Latitude"
-              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 13, outline: 'none' }} />
-            <input type="number" step="any" value={tripData.longitude} onChange={e => setTripData({ ...tripData, longitude: e.target.value })} placeholder="Longitude"
-              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 13, outline: 'none' }} />
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '14px', border: '1.5px solid #e5e7eb', borderRadius: 12, background: '#fff', color: '#374151', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-          <button onClick={onSubmit} disabled={loading} style={{ flex: 1, padding: '14px', border: 'none', borderRadius: 12, background: '#0f1117', color: '#fff', fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>
-            {loading ? 'Creating Trip...' : 'Create Trip Log'}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-/* ─────────────────────────────────────────────
    EDIT TRIP MODAL
 ──────────────────────────────────────────────── */
 function EditTripModal({ modal, onClose, onSubmit, tripData, setTripData, invoices, setInvoices, checks, setChecks, loading }) {
@@ -516,23 +404,6 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   const [analyticsDriver, setAnalyticsDriver] = useState('');
   const [analyticsYear, setAnalyticsYear] = useState('all');
 
-  // Create Trip Modal State
-  const [createModal, setCreateModal] = useState({ open: false });
-  const [createTripData, setCreateTripData] = useState({
-    driver_id: '',
-    date: today(),
-    helper: '',
-    dealer: '',
-    time_departure: '',
-    time_arrival: '',
-    time_unload_end: '',
-    departure_odometer: '',
-    arrival_odometer: '',
-    latitude: '',
-    longitude: ''
-  });
-  const [loadingCreate, setLoadingCreate] = useState(false);
-
   /* ── Request notification permission ── */
   const requestPermission = useCallback(async () => {
     if (typeof Notification === 'undefined') return;
@@ -723,52 +594,6 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
       } else { addToast(data.message || 'Failed to update trip', 'error', 'Update Failed'); }
     } catch { addToast('Could not connect to server', 'error', 'Connection Error'); }
     finally { setLoadingUpdate(false); }
-  };
-
-  const handleCreateTrip = async () => {
-    if (!createTripData.driver_id) return addToast('Please select a driver', 'error', 'Missing Data');
-    if (!createTripData.date) return addToast('Please select a date', 'error', 'Missing Data');
-    
-    setLoadingCreate(true);
-    try {
-      const payload = {
-        driver_id: createTripData.driver_id,
-        date: createTripData.date,
-        helper: createTripData.helper,
-        dealer: createTripData.dealer,
-        time_departure: createTripData.time_departure || undefined,
-        time_arrival: createTripData.time_arrival || undefined,
-        time_unload_end: createTripData.time_unload_end || undefined,
-        departure_odometer: createTripData.departure_odometer || undefined,
-        arrival_odometer: createTripData.arrival_odometer || undefined,
-        is_completed: !!createTripData.time_unload_end,
-        location: {
-          latitude: createTripData.latitude ? parseFloat(createTripData.latitude) : undefined,
-          longitude: createTripData.longitude ? parseFloat(createTripData.longitude) : undefined
-        }
-      };
-
-      const res = await fetch(`${API_URL}/trips`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) {
-        addToast('Trip record created successfully!', 'success', 'Created');
-        setCreateModal({ open: false });
-        // Reset form
-        setCreateTripData({ driver_id: '', date: today(), helper: '', dealer: '', time_departure: '', time_arrival: '', time_unload_end: '', departure_odometer: '', arrival_odometer: '', latitude: '', longitude: '' });
-        if (activeDatabase === 'main') await fetchMainTrips();
-      } else {
-        addToast(data.message || 'Failed to create trip', 'error', 'Creation Failed');
-      }
-    } catch (err) {
-      addToast('Could not connect to server', 'error', 'Connection Error');
-    } finally {
-      setLoadingCreate(false);
-    }
   };
 
   const openResetPasswordModal = driver => {
@@ -1134,16 +959,6 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
         />
       )}
 
-      <CreateTripModal 
-        modal={createModal} 
-        onClose={() => setCreateModal({ open: false })} 
-        onSubmit={handleCreateTrip}
-        tripData={createTripData} 
-        setTripData={setCreateTripData}
-        drivers={drivers}
-        loading={loadingCreate} 
-      />
-
       <EditTripModal modal={editModal} onClose={() => setEditModal({ open: false, tripId: null })} onSubmit={handleUpdateTrip}
         tripData={editTripData} setTripData={setEditTripData}
         invoices={editInvoices} setInvoices={setEditInvoices}
@@ -1321,9 +1136,6 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
                 <input className="ad-date-input" type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} title="From date" />
                 <input className="ad-date-input" type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} title="To date" />
                 {hasTripFilters && <button className="ad-clear-btn" onClick={clearTripFilters}><CloseIcon /> Clear</button>}
-                <button className="ad-export-btn" onClick={() => setCreateModal({ open: true })} style={{ background: '#f59e0b', color: '#0f1117' }}>
-                  <TruckIcon size={14} /> Create Trip Log
-                </button>
                 <button className="ad-export-btn" onClick={exportTrips}><ExportIcon /> Export CSV</button>
                 <button className="ad-refresh-btn" onClick={activeDatabase === 'main' ? fetchMainTrips : fetchHistoricalData}><RefreshIcon /> Refresh</button>
               </div>
