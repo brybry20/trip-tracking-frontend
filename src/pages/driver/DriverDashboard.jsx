@@ -1047,8 +1047,24 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
 
               <div className="dd-form-grid">
                 <div className="dd-field">
-                  <label className="dd-label">Helper</label>
-                  <input className="dd-input" type="text" name="helper" value={tripForm.helper} onChange={handleInputChange} placeholder="Helper name" />
+                  <label className="dd-label">Helper(s)</label>
+                  <input 
+                    className="dd-input" 
+                    type="text" 
+                    name="helper" 
+                    value={tripForm.helper} 
+                    onChange={handleInputChange} 
+                    placeholder="Helper names (e.g. Juan, Pedro)"
+                    list="helpers-list"
+                  />
+                  <datalist id="helpers-list">
+                    <option value="MORALLOS, CARLO" />
+                    <option value="CRUZ, JUAN" />
+                    <option value="REYES, PEDRO" />
+                  </datalist>
+                  <span style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
+                    Use commas (,) or slashes (/) to separate multiple helpers.
+                  </span>
                 </div>
                 <div className="dd-field">
                   <label className="dd-label">Dealer</label>
