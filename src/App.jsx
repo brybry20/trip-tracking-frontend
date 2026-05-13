@@ -37,28 +37,15 @@ function App() {
       const storedToken = localStorage.getItem(TOKEN_KEY);
       const storedUser = localStorage.getItem(USER_KEY);
 
-      // ── STEP 1: Pre-warm the server with a fast /health ping ──
-      // This starts waking up Render's server immediately while the splash screen shows.
-      setStatus('Waking up server...');
-      try {
-        await fetch(`${API_URL}/health`, { method: 'GET', cache: 'no-store' });
-        setStatus('Server is awake! Verifying session...');
-      } catch {
-        // Server might still be cold-starting, give it more time
-        setStatus('Server is starting up, please wait...');
-        await new Promise(r => setTimeout(r, 5000));
-        try {
-          await fetch(`${API_URL}/health`, { method: 'GET', cache: 'no-store' });
-          setStatus('Connected! Verifying session...');
-        } catch {
-          setStatus('Connection slow, continuing anyway...');
-        }
-      }
+      // Start pre-warming the server immediately
+      const healthPromise = fetch(`${API_URL}/health`, { method: 'GET', cache: 'no-store' }).catch(() => null);
+      
+      setStatus('Connecting to server...');
 
-      // ── STEP 2: Do the actual auth check ──
       try {
         if (storedToken && storedUser) {
-          setStatus('Verifying credentials...');
+          setStatus('Verifying session...');
+          // Concurrently verify token while server is waking up
           const res = await fetch(`${API_URL}/auth/verify-token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -81,23 +68,31 @@ function App() {
             }
           }
         } else {
-          setStatus('Checking session...');
-          const res = await fetch(`${API_URL}/auth/check`, {
-            credentials: 'include'
-          });
-          
+          setStatus('Checking credentials...');
+          const res = await fetch(`${API_URL}/auth/check`, { credentials: 'include' });
           if (res.ok) {
             const data = await res.json();
-            if (data.authenticated) {
-              setUser(data);
-            }
+            if (data.authenticated) setUser(data);
           }
         }
       } catch (err) {
-        console.error('Auth verification failed:', err);
-        setStatus('Session check failed. Redirecting to login...');
+        console.error('Auth check failed:', err);
+        // If it failed, it might be a cold start. Wait a bit if we haven't seen health success.
+        const health = await healthPromise;
+        if (!health) {
+          setStatus('Server waking up (Render Free Tier)...');
+          await new Promise(r => setTimeout(r, 3000));
+          // Retry once
+          try {
+            const res = await fetch(`${API_URL}/auth/check`, { credentials: 'include' });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.authenticated) setUser(data);
+            }
+          } catch {}
+        }
       } finally {
-        // Smooth transition out of splash screen
+        setStatus('Welcome to Deltaplus');
         setTimeout(() => setLoading(false), 600);
       }
     };

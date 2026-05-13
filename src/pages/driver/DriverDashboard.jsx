@@ -347,7 +347,12 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
     }
     navigator.geolocation.getCurrentPosition(
       pos => {
-        setCurrentLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy, timestamp: new Date().toISOString() });
+        setCurrentLocation({ 
+          latitude: pos.coords.latitude, 
+          longitude: pos.coords.longitude, 
+          accuracy: pos.coords.accuracy, 
+          timestamp: new Date().toISOString() 
+        });
         setIsGettingLocation(false);
       },
       err => {
@@ -355,7 +360,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         setLocationError(msgs[err.code] || 'Unknown error occurred');
         setIsGettingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
     );
   };
 
@@ -736,8 +741,15 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
     if (!start || !end) return '';
     const [startH, startM] = start.split(':').map(Number);
     const [endH, endM] = end.split(':').map(Number);
-    const diff = Math.abs((endH * 60 + endM) - (startH * 60 + startM));
-    return `${Math.floor(diff / 60)}h ${diff % 60}m`;
+    
+    let diffInMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+    
+    // Handle crossing midnight
+    if (diffInMinutes < 0) diffInMinutes += 24 * 60;
+    
+    const h = Math.floor(diffInMinutes / 60);
+    const m = diffInMinutes % 60;
+    return `${h}h ${m}m`;
   };
 
   if (!driverInfo) return (

@@ -67,8 +67,19 @@ function Dashboard({ user, setUser }) {
     };
     checkAuth();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    
+    // Background polling every 15 seconds (if tab is active)
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchTrips();
+      }
+    }, 15000);
+
     setTimeout(() => setMounted(true), 60);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      clearInterval(pollInterval);
+    };
   }, []);
 
   // Close menu on outside tap
