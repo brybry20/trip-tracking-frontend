@@ -345,7 +345,7 @@ function EditDriverModal({ modal, onClose, onSubmit, driverData, setDriverData, 
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
 ──────────────────────────────────────────────── */
-function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: parentFetchTrips }) {
+function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: parentFetchTrips, handleSessionExpired }) {
   const { toasts, addToast, removeToast } = useToast();
 
   const [view, setView] = useState('drivers');
@@ -491,6 +491,10 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   const fetchMainTrips = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/trips`, { credentials: 'include' });
+      if (res.status === 401) {
+        if (typeof handleSessionExpired === 'function') handleSessionExpired();
+        return;
+      }
       const data = await res.json();
       const fresh = Array.isArray(data) ? data : (data.trips || []);
       runNotificationDiff(fresh);
@@ -499,7 +503,7 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
     } catch (err) {
       console.error('Fetch trips failed:', err);
     }
-  }, [runNotificationDiff, parentFetchTrips]);
+  }, [runNotificationDiff, parentFetchTrips, handleSessionExpired]);
 
   /* ── Auto-refresh every 1 second ── */
   useEffect(() => {
@@ -529,6 +533,10 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
   const fetchDrivers = async () => {
     try {
       const res = await fetch(`${API_URL}/auth/drivers`, { credentials: 'include' });
+      if (res.status === 401) {
+        if (typeof handleSessionExpired === 'function') handleSessionExpired();
+        return;
+      }
       const data = await res.json();
       if (Array.isArray(data)) {
         setDrivers(data);
@@ -547,6 +555,10 @@ function AdminDashboard({ drivers: propDrivers, trips: propTrips, fetchTrips: pa
         fetch(`${API_URL}/api/2025/trips`, { credentials: 'include' }),
         fetch(`${API_URL}/api/2025/drivers`, { credentials: 'include' }),
       ]);
+      if (tRes.status === 401 || dRes.status === 401) {
+        if (typeof handleSessionExpired === 'function') handleSessionExpired();
+        return;
+      }
       const tData = await tRes.json();
       const dData = await dRes.json();
       const freshHist = tData.trips || [];

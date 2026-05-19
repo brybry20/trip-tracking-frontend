@@ -90,9 +90,20 @@ function Dashboard({ user, setUser }) {
     return () => document.removeEventListener('click', close);
   }, [menuOpen]);
 
+  const handleSessionExpired = () => {
+    localStorage.removeItem('deltaplus_token');
+    localStorage.removeItem('deltaplus_user');
+    setUser(null);
+    navigate('/login');
+  };
+
   const fetchDriverInfo = async () => {
     try {
       const res = await fetch(`${API_URL}/auth/drivers`, { credentials: 'include' });
+      if (res.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       const data = await res.json();
       setDriverInfo(data.find(d => d.username === user.username));
     } catch (err) { console.log(err); }
@@ -101,6 +112,10 @@ function Dashboard({ user, setUser }) {
   const fetchDrivers = async () => {
     try {
       const res = await fetch(`${API_URL}/auth/drivers`, { credentials: 'include' });
+      if (res.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       const data = await res.json();
       if (Array.isArray(data)) {
         setDrivers(data);
@@ -117,6 +132,10 @@ function Dashboard({ user, setUser }) {
   const fetchTrips = async () => {
     try {
       const res = await fetch(`${API_URL}/trips`, { credentials: 'include' });
+      if (res.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       const data = await res.json();
       if (Array.isArray(data)) {
         setTrips(data);
@@ -131,7 +150,11 @@ function Dashboard({ user, setUser }) {
   };
 
   const handleLogout = async () => {
-    await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+    try {
+      await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch {}
+    localStorage.removeItem('deltaplus_token');
+    localStorage.removeItem('deltaplus_user');
     setUser(null);
     navigate('/login');
   };
@@ -535,8 +558,8 @@ function Dashboard({ user, setUser }) {
         {/* ── Main content ── */}
         <div className="db-content">
           {isAdmin
-            ? <AdminDashboard drivers={drivers} trips={trips} fetchTrips={fetchTrips} />
-            : <DriverDashboard driverInfo={driverInfo} trips={trips} fetchTrips={fetchTrips} user={user} />
+            ? <AdminDashboard drivers={drivers} trips={trips} fetchTrips={fetchTrips} handleSessionExpired={handleSessionExpired} />
+            : <DriverDashboard driverInfo={driverInfo} trips={trips} fetchTrips={fetchTrips} user={user} handleSessionExpired={handleSessionExpired} />
           }
         </div>
 

@@ -245,7 +245,7 @@ function LocationCard({ currentLocation, locationError, isGettingLocation, onRef
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
 ───────────────────────────────────────────── */
-function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
+function DriverDashboard({ driverInfo, trips, fetchTrips, user, handleSessionExpired }) {
   const { toasts, addToast, removeToast } = useToast();
 
   const [showForm, setShowForm] = useState(false);
@@ -395,6 +395,11 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         }),
         credentials: 'include'
       });
+      if (res.status === 401) {
+        hideLoading();
+        if (typeof handleSessionExpired === 'function') handleSessionExpired();
+        return;
+      }
       const data = await res.json();
 
       if (data.success) {
@@ -439,6 +444,11 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
     showLoading('Recording Arrival…', 'Saving arrival time');
     try {
       const res = await fetch(`${API_URL}/trips/${editingTrip.id}/arrive`, { method: 'POST', credentials: 'include' });
+      if (res.status === 401) {
+        hideLoading();
+        if (typeof handleSessionExpired === 'function') handleSessionExpired();
+        return;
+      }
       const data = await res.json();
 
       if (data.success) {
@@ -471,7 +481,7 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
       const validInvoices = invoices.filter(inv => inv.invoice_no && inv.amount);
       const validChecks = checks.filter(chk => chk.check_no && chk.amount);
 
-      await fetch(`${API_URL}/trips/${editingTrip.id}`, {
+      const updateRes = await fetch(`${API_URL}/trips/${editingTrip.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...tripForm,
@@ -481,9 +491,19 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         }),
         credentials: 'include'
       });
+      if (updateRes.status === 401) {
+        hideLoading();
+        if (typeof handleSessionExpired === 'function') handleSessionExpired();
+        return;
+      }
 
       // Then end the trip
       const res = await fetch(`${API_URL}/trips/${editingTrip.id}/end-trip`, { method: 'POST', credentials: 'include' });
+      if (res.status === 401) {
+        hideLoading();
+        if (typeof handleSessionExpired === 'function') handleSessionExpired();
+        return;
+      }
       const data = await res.json();
 
       if (data.success) {
@@ -572,6 +592,11 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
         showLoading('Deleting Trip…', 'Removing trip record from the database');
         try {
           const res = await fetch(`${API_URL}/trips/${tripId}`, { method: 'DELETE', credentials: 'include' });
+          if (res.status === 401) {
+            hideLoading();
+            if (typeof handleSessionExpired === 'function') handleSessionExpired();
+            return;
+          }
           const data = await res.json();
           if (data.success) {
             await fetchTrips();
@@ -626,6 +651,11 @@ function DriverDashboard({ driverInfo, trips, fetchTrips, user }) {
             body: JSON.stringify(updateData),
             credentials: 'include'
           });
+          if (res.status === 401) {
+            hideLoading();
+            if (typeof handleSessionExpired === 'function') handleSessionExpired();
+            return;
+          }
           const data = await res.json();
           if (data.success) {
             await fetchTrips();
